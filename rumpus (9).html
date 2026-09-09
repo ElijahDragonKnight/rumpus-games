@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rumpus — browser games, no downloads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400..800&family=Wix+Madefor+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14121f;
+    --bg-raise: #1c1930;
+    --surface: #211d3a;
+    --surface-hi: #2a2549;
+    --line: #352f57;
+    --text: #f3f1fb;
+    --text-dim: #a89fc9;
+    --yellow: #f2c14e;
+    --mint: #57e3b0;
+    --pink: #ef6f9e;
+    --sky: #63b3f2;
+    --violet: #a680f2;
+    --coral: #f2884e;
+    --radius-card: 14px;
+    font-size: 16px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: radial-gradient(1200px 800px at 15% -10%, #241f42 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Wix Madefor Text', system-ui, -apple-system, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    padding-left: 64px;
+  }
+  h1,h2,h3,.wordmark{
+    font-family: 'Wix Madefor Display', 'Wix Madefor Text', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  a{ color:inherit; }
+  button{ font-family: inherit; cursor:pointer; }
+  ::selection{ background: var(--yellow); color:#14121f; }
+
+  /* ---------- layout shell ---------- */
+  .shell{ max-width: 1180px; margin: 0 auto; padding: 0 24px 80px; }
+  header.top{
+    position: sticky; top:0; z-index: 40;
+    background: rgba(20,18,31,0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .top-inner{
+    max-width: 1180px; margin:0 auto; padding: 16px 24px;
+    display:flex; align-items:center; gap:20px; flex-wrap: wrap;
+  }
+  .wordmark{ font-size: 26px; color: var(--text); white-space:nowrap; display:flex; align-items:baseline; gap:8px;}
+  .wordmark span{ color: var(--yellow); }
+  .tagline{ font-size: 12px; color: var(--text-dim); font-family: inherit; font-weight:400; margin-left:2px; }
+
+  .search-wrap{ flex: 1 1 260px; min-width: 180px; position: relative; }
+  .search-wrap input{
+    width:100%; padding: 10px 14px 10px 36px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--text);
+    font-size: 14px; outline: none;
+  }
+  .search-wrap input:focus{ border-color: var(--yellow); }
+  .search-wrap svg{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:0.6; }
+
+  .auth-area{ display:flex; align-items:center; gap:10px; }
+  .btn{
+    padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--text); font-size: 14px; font-weight:600;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .btn:hover{ border-color: var(--text-dim); transform: translateY(-1px); }
+  .btn.primary{ background: var(--yellow); color:#14121f; border-color: var(--yellow); }
+  .btn.primary:hover{ filter: brightness(1.06); }
+  .btn.ghost{ background: transparent; }
+  .btn:active{ transform: translateY(0); }
+
+  .avatar-pill{
+    display:flex; align-items:center; gap:8px; padding:6px 14px 6px 6px;
+    border-radius: 999px; background: var(--surface); border:1px solid var(--line);
+    font-size: 13px; font-weight:600;
+  }
+  .avatar-dot{
+    width: 26px; height:26px; border-radius:50%;
+    background: linear-gradient(135deg, var(--mint), var(--sky));
+    display:flex; align-items:center; justify-content:center; font-size:12px; color:#0d1f1a; font-weight:800;
+  }
+
+  /* ---------- category pills ---------- */
+  .pillbar{ display:flex; gap:8px; overflow-x:auto; padding: 18px 0 6px; }
+  .pillbar::-webkit-scrollbar{ display:none; }
+  .pill{
+    flex: 0 0 auto; padding: 7px 15px; border-radius: 999px; font-size: 13px; font-weight:600;
+    background: var(--surface); border: 1px solid var(--line); color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .pill.active{ background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  /* ---------- hero ---------- */
+  .hero{
+    margin-top: 22px; border-radius: 22px; border: 1px solid var(--line);
+    background: linear-gradient(120deg, #241f42, #1a1730 70%);
+    padding: 26px; display:grid; grid-template-columns: 1.1fr 1fr; gap: 28px; align-items:center;
+  }
+  @media (max-width: 760px){ .hero{ grid-template-columns: 1fr; } }
+  .hero-copy .eyebrow{ color: var(--mint); font-size: 13px; font-weight:700; margin:0 0 8px; }
+  .hero-copy h1{ font-size: 34px; line-height:1.15; margin: 0 0 10px; }
+  .hero-copy p{ color: var(--text-dim); font-size: 15px; line-height:1.55; max-width: 46ch; margin: 0 0 18px;}
+  .hero-stage{
+    background: #0e0c1a; border-radius: 16px; border:1px solid var(--line);
+    padding: 14px; display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  #heroCanvas{ image-rendering: pixelated; border-radius: 10px; background:#0a0916; }
+  .hero-stage .hs-label{ font-size: 12px; color: var(--text-dim); }
+
+  /* ---------- game grid ---------- */
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; margin: 34px 0 14px; }
+  .section-head h2{ font-size: 20px; margin:0; }
+  .section-head .count{ color: var(--text-dim); font-size: 13px; }
+
+  .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 16px; }
+  .card{
+    position:relative; border-radius: var(--radius-card); border: 1px solid var(--line);
+    background: var(--surface); overflow:hidden; display:flex; flex-direction:column;
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .card:hover{ transform: translateY(-3px); border-color: var(--text-dim); }
+  .card .notch{
+    position:absolute; top:0; right:18px; width: 26px; height: 12px;
+    background: var(--bg); border-bottom-left-radius:8px; border-bottom-right-radius:8px;
+  }
+  .thumb{
+    height: 110px; display:flex; align-items:center; justify-content:center; font-size: 38px;
+  }
+  .card-body{ padding: 12px 14px 14px; display:flex; flex-direction:column; gap:6px; flex:1; }
+  .card-body h3{ font-size: 15px; margin:0; }
+  .card-tag{ font-size: 11px; color: var(--text-dim); font-weight:600; }
+  .card-foot{ margin-top:auto; display:flex; align-items:center; justify-content:space-between; padding-top:8px; }
+  .best{ font-size: 12px; color: var(--yellow); font-weight:700; }
+  .play-btn{
+    font-size: 12px; font-weight:700; padding: 6px 12px; border-radius: 999px;
+    background: var(--surface-hi); border:1px solid var(--line); color:var(--text);
+  }
+  .card:hover .play-btn{ background: var(--yellow); color:#14121f; border-color:var(--yellow); }
+  .card.soon{ opacity: 0.55; }
+  .card.soon .play-btn{ pointer-events:none; }
+
+  .empty{
+    text-align:center; padding: 60px 20px; color: var(--text-dim); border:1px dashed var(--line);
+    border-radius: 16px;
+  }
+
+  /* ---------- modal (auth + game) ---------- */
+  .overlay{
+    position: fixed; inset:0; background: rgba(10,9,18,0.72); backdrop-filter: blur(4px);
+    display:flex; align-items:center; justify-content:center; z-index: 100; padding: 20px;
+  }
+  .hidden{ display:none !important; }
+  .modal{
+    background: var(--bg-raise); border:1px solid var(--line); border-radius: 18px;
+    width: 100%; max-width: 420px; padding: 26px; position:relative;
+  }
+  .modal.game-modal{ max-width: 640px; }
+  .modal .close{
+    position:absolute; top:14px; right:14px; background: none; border:none; color: var(--text-dim);
+    font-size: 20px; line-height:1; padding:4px;
+  }
+  .modal .close:hover{ color: var(--text); }
+  .modal h2{ margin: 0 0 4px; font-size: 22px; }
+  .modal .sub{ color: var(--text-dim); font-size: 13px; margin: 0 0 18px; }
+  .field{ margin-bottom: 14px; }
+  .field label{ display:block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; font-weight:600; }
+  .field input{
+    width:100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--text); font-size: 14px; outline:none;
+  }
+  .field input:focus{ border-color: var(--yellow); }
+  .form-msg{ font-size: 13px; min-height: 18px; margin: -4px 0 12px; color: var(--coral); }
+  .switch-line{ font-size: 13px; color: var(--text-dim); margin-top: 14px; text-align:center; }
+  .switch-line button{ background:none; border:none; color: var(--mint); font-weight:700; padding:0; }
+
+  .game-head{ display:flex; align-items:center; justify-content:space-between; gap: 12px; margin-bottom: 14px; padding-right: 26px;}
+  .game-head .gh-title{ display:flex; align-items:center; gap:10px; }
+  .game-head .gh-title span.icon{ font-size: 24px; }
+  .game-head h2{ font-size: 20px; margin:0; }
+  .game-stats{ display:flex; gap: 14px; font-size: 13px; color: var(--text-dim); margin-bottom: 10px; flex-wrap:wrap;}
+  .game-stats b{ color: var(--text); }
+  .game-stage{
+    background:#0e0c1a; border-radius: 14px; border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; padding: 14px; min-height: 300px;
+  }
+  .game-note{ font-size: 12px; color: var(--text-dim); margin-top: 10px; text-align:center; }
+  .game-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  .gt-left{ display:flex; gap:8px; }
+  .gt-btn{
+    background: var(--surface); border:1px solid var(--line); border-radius:8px; padding:7px 13px;
+    font-size:13px; font-weight:700; color:var(--text-dim); display:flex; align-items:center; gap:6px;
+  }
+  .gt-btn:hover{ border-color: var(--text-dim); }
+  .gt-btn.active{ color: var(--yellow); border-color: var(--yellow); background: rgba(242,193,78,0.08); }
+  .gt-plays{ font-size:12px; color: var(--text-dim); }
+  .leaderboard{ margin-top: 14px; font-size: 12px; color: var(--text-dim); }
+  .leaderboard b{ color: var(--text); }
+  .lb-row{ display:flex; justify-content:space-between; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+
+  footer{ text-align:center; padding: 40px 0 10px; color: var(--text-dim); font-size: 12px; }
+
+  /* ---------- hover sidebar ---------- */
+  .sidebar{
+    position: fixed; top:0; left:0; height:100vh; width:64px;
+    background: var(--bg-raise); border-right: 1px solid var(--line);
+    overflow: hidden; transition: width .18s ease;
+    z-index: 60; display:flex; flex-direction:column; padding: 14px 0;
+  }
+  .sidebar:hover{ width: 224px; box-shadow: 8px 0 24px rgba(0,0,0,0.35); }
+  .side-logo{
+    display:flex; align-items:center; gap:12px; padding: 4px 20px 18px; white-space:nowrap;
+  }
+  .side-logo .dot{ width:22px; height:22px; border-radius:7px; background: var(--yellow); flex-shrink:0; }
+  .side-logo .label{ font-family:'Wix Madefor Display',sans-serif; font-weight:800; font-size:16px; opacity:0; transition: opacity .12s ease; }
+  .sidebar:hover .side-logo .label{ opacity:1; }
+  .side-item{
+    display:flex; align-items:center; gap:14px; padding: 10px 20px; white-space:nowrap;
+    color: var(--text-dim); font-size: 14px; font-weight:600; border: none; background:none;
+    width:100%; text-align:left; font-family:inherit;
+  }
+  .side-item:hover{ color: var(--text); background: var(--surface); }
+  .side-item.active{ color: var(--text); background: var(--surface-hi); border-left:3px solid var(--yellow); padding-left:17px; }
+  .side-item .icon{ font-size:18px; width:22px; text-align:center; flex-shrink:0; }
+  .side-item .label{ opacity:0; transition: opacity .12s ease; }
+  .sidebar:hover .side-item .label{ opacity:1; }
+  .side-divider{ border:none; border-top:1px solid var(--line); margin: 10px 16px; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="side-logo"><div class="dot"></div><span class="label">Rumpus</span></div>
+  <button class="side-item active" data-cat="All"><span class="icon">🏠</span><span class="label">Home</span></button>
+  <hr class="side-divider">
+  <button class="side-item" data-cat="Arcade"><span class="icon">🕹️</span><span class="label">Arcade</span></button>
+  <button class="side-item" data-cat="Puzzle"><span class="icon">🧩</span><span class="label">Puzzle</span></button>
+  <button class="side-item" data-cat="Reflex"><span class="icon">⚡</span><span class="label">Reflex</span></button>
+  <button class="side-item" data-cat="Classics"><span class="icon">♟️</span><span class="label">Classics</span></button>
+  <button class="side-item" data-cat="Community"><span class="icon">👥</span><span class="label">Community</span></button>
+  <hr class="side-divider">
+  <button class="side-item" id="sideSubmit"><span class="icon">📤</span><span class="label">Submit a game</span></button>
+</nav>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="wordmark">Rumpus<span>.</span><span class="tagline">browser games, no downloads</span></div>
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="searchInput" type="text" placeholder="Search games..." />
+    </div>
+    <div class="auth-area" id="authArea"></div>
+    <button class="btn ghost" id="submitGameBtn">Submit a game</button>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="pillbar" id="pillbar"></div>
+
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">WELCOME TO RUMPUS</p>
+      <h1>Browser games, no downloads.</h1>
+      <p>This library is empty right now — every game here comes from creators like you. Submit a link to your game and it'll show up for everyone the moment it's approved.</p>
+      <button class="btn primary" id="heroPlayBtn">Submit a game</button>
+    </div>
+    <div class="hero-stage">
+      <div style="width:240px; height:240px; border-radius:10px; background:#0a0916; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--text-dim); font-size:13px; text-align:center; padding:20px;">
+        <span style="font-size:34px;">🎮</span>
+        No games yet — be the first to add one.
+      </div>
+    </div>
+  </section>
+
+  <div class="section-head">
+    <h2 id="gridTitle">All games</h2>
+    <span class="count" id="gridCount"></span>
+  </div>
+  <div class="grid" id="gameGrid"></div>
+  <div class="empty hidden" id="emptyState">No games match that search. Try a different word or category.</div>
+</div>
+
+<footer>Rumpus is a demo game portal built for learning &amp; portfolio purposes. Not affiliated with any other gaming platform.</footer>
+
+<!-- Auth modal -->
+<div class="overlay hidden" id="authOverlay">
+  <div class="modal">
+    <button class="close" data-close="authOverlay">&times;</button>
+    <div id="authModalBody"></div>
+  </div>
+</div>
+
+<!-- Game modal -->
+<div class="overlay hidden" id="gameOverlay">
+  <div class="modal game-modal">
+    <button class="close" data-close="gameOverlay">&times;</button>
+    <div id="gameModalBody"></div>
+  </div>
+</div>
+
+<!-- Submit-a-game modal -->
+<div class="overlay hidden" id="submitOverlay">
+  <div class="modal">
+    <button class="close" data-close="submitOverlay">&times;</button>
+    <div id="submitModalBody"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+/* ======================= DATA: game catalog ======================= */
+const GAMES = [];
+const CATEGORIES = ['All','Arcade','Puzzle','Reflex','Classics','Community'];
+const ADMIN_EMAIL = 'elijahdragonknight@gmail.com';
+
+/* ======================= tiny storage helpers (browser localStorage, per-device) ======================= */
+function sGet(key){
+  try{ const v = localStorage.getItem(key); return Promise.resolve(v ? JSON.parse(v) : null); }
+  catch(e){ return Promise.resolve(null); }
+}
+function sSet(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); return Promise.resolve({key, value:val}); }
+  catch(e){ console.error('storage set failed', e); return Promise.resolve(null); }
+}
+function sList(prefix){
+  try{
+    const keys = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith(prefix)) keys.push(k);
+    }
+    return Promise.resolve({ keys });
+  }catch(e){ return Promise.resolve({ keys: [] }); }
+}
+function sDelete(key){
+  try{ localStorage.removeItem(key); return Promise.resolve({ key, deleted:true }); }
+  catch(e){ return Promise.resolve(null); }
+}
+
+// Paste your Formspree endpoint here (formspree.io — free, no backend needed) to get
+// real email notifications for new submissions. Leave as-is to skip email and rely on
+// the auto-opened mailto draft instead.
+const FORMSPREE_ENDPOINT = ''; // e.g. 'https://formspree.io/f/abcdwxyz'
+
+/* ======================= app state ======================= */
+let currentUser = null;   // { username, scores:{} }
+let activeCategory = 'All';
+let searchQuery = '';
+let communityGames = [];  // approved submissions, loaded async
+
+/* ======================= render: auth area ======================= */
+function renderAuthArea(){
+  const el = document.getElementById('authArea');
+  if(currentUser){
+    const initial = currentUser.username.slice(0,1).toUpperCase();
+    el.innerHTML = `
+      <div class="avatar-pill" id="profilePill" title="View profile">
+        <div class="avatar-dot">${initial}</div> ${escapeHtml(currentUser.username)}
+      </div>
+      ${currentUser.isAdmin ? '<button class="btn ghost" id="adminBtn" style="border-color:var(--yellow); color:var(--yellow);">Admin</button>' : ''}
+      <button class="btn ghost" id="logoutBtn">Log out</button>
+    `;
+    document.getElementById('profilePill').onclick = openProfile;
+    document.getElementById('logoutBtn').onclick = logout;
+    if(currentUser.isAdmin) document.getElementById('adminBtn').onclick = openAdminPanel;
+  } else {
+    el.innerHTML = `
+      <button class="btn ghost" id="loginBtn">Log in</button>
+      <button class="btn primary" id="signupBtn">Sign up</button>
+    `;
+    document.getElementById('loginBtn').onclick = () => openAuth('login');
+    document.getElementById('signupBtn').onclick = () => openAuth('signup');
+  }
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ======================= auth flows ======================= */
+function openAuth(mode){
+  document.getElementById('authOverlay').classList.remove('hidden');
+  renderAuthForm(mode);
+}
+function renderAuthForm(mode){
+  const body = document.getElementById('authModalBody');
+  const isLogin = mode === 'login';
+  body.innerHTML = `
+    <h2>${isLogin ? 'Welcome back' : 'Create your account'}</h2>
+    <p class="sub">${isLogin ? 'Log in to see your saved scores.' : 'Scores &amp; progress are stored in this app\'s shared demo storage — visible to anyone using this app, not private.'}</p>
+    <div class="field"><label>Username</label><input id="authUser" type="text" autocomplete="username" /></div>
+    ${isLogin ? '' : '<div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email" /></div>'}
+    <div class="field"><label>Password</label><input id="authPass" type="password" autocomplete="${isLogin?'current-password':'new-password'}" /></div>
+    <div class="form-msg" id="authMsg"></div>
+    <button class="btn primary" style="width:100%" id="authSubmit">${isLogin ? 'Log in' : 'Sign up'}</button>
+    <div class="switch-line">
+      ${isLogin ? "New here? " : "Already have an account? "}
+      <button id="authSwitch">${isLogin ? 'Sign up' : 'Log in'}</button>
+    </div>
+  `;
+  document.getElementById('authSwitch').onclick = () => renderAuthForm(isLogin ? 'signup' : 'login');
+  document.getElementById('authSubmit').onclick = () => handleAuthSubmit(mode);
+  document.getElementById('authPass').addEventListener('keydown', e => { if(e.key==='Enter') handleAuthSubmit(mode); });
+}
+async function handleAuthSubmit(mode){
+  const username = document.getElementById('authUser').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const msg = document.getElementById('authMsg');
+  if(!username || !pass){ msg.textContent = 'Enter a username and password.'; return; }
+  if(username.length < 3){ msg.textContent = 'Username needs at least 3 characters.'; return; }
+
+  const key = 'rumpus:user:' + username.toLowerCase();
+  const existing = await sGet(key);
+
+  if(mode === 'signup'){
+    const email = document.getElementById('authEmail').value.trim();
+    if(!email || !/^\S+@\S+\.\S+$/.test(email)){ msg.textContent = 'Enter a valid email.'; return; }
+    if(existing){ msg.textContent = 'That username is taken. Try logging in instead.'; return; }
+    const record = { username, password: pass, email: email.toLowerCase(), joined: Date.now(), scores: {} };
+    await sSet(key, record);
+    currentUser = record;
+  } else {
+    if(!existing){ msg.textContent = 'No account with that username yet. Sign up first.'; return; }
+    if(existing.password !== pass){ msg.textContent = 'Wrong password.'; return; }
+    currentUser = existing;
+  }
+  currentUser.isAdmin = !!(currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL);
+  document.getElementById('authOverlay').classList.add('hidden');
+  renderAuthArea();
+  renderGrid();
+}
+function logout(){ currentUser = null; renderAuthArea(); renderGrid(); }
+
+async function openAdminPanel(){
+  document.getElementById('authOverlay').classList.remove('hidden');
+  const body = document.getElementById('authModalBody');
+  body.innerHTML = `
+    <h2>Admin</h2>
+    <p class="sub">Review submitted games, and manage accounts.</p>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Pending submissions</h3>
+    <div id="adminSubs" style="max-height:220px; overflow-y:auto; margin-bottom:10px;"><p class="sub">Loading submissions…</p></div>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Published games</h3>
+    <div id="adminGames" style="max-height:220px; overflow-y:auto; margin-bottom:10px;"><p class="sub">Loading games…</p></div>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Accounts</h3>
+    <div id="adminList" style="max-height:220px; overflow-y:auto;"><p class="sub">Loading accounts…</p></div>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Data backup</h3>
+    <p class="sub" style="margin-bottom:10px;">Everything (accounts, scores, submissions) already survives site updates on its own. This backup is only in case someone clears their browser or switches devices.</p>
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button class="btn ghost" style="flex:1; font-size:13px;" id="exportBtn">⬇ Export backup</button>
+      <label class="btn ghost" style="flex:1; font-size:13px; text-align:center; cursor:pointer;">
+        ⬆ Import backup
+        <input type="file" id="importInput" accept="application/json" style="display:none;">
+      </label>
+    </div>
+    <button class="btn ghost" style="width:100%;" id="closeAdmin">Close</button>
+  `;
+  document.getElementById('closeAdmin').onclick = () => document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('exportBtn').onclick = exportAllData;
+  document.getElementById('importInput').onchange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if(file) importAllData(file);
+  };
+  await refreshAdminList();
+  await refreshAdminSubs();
+  await refreshAdminGames();
+}
+
+async function refreshAdminGames(){
+  const el = document.getElementById('adminGames');
+  if(!el) return;
+  let keys = [];
+  try{
+    const res = await sList('rumpus:submission:');
+    keys = res ? res.keys : [];
+  }catch(e){ el.innerHTML = '<p class="sub">Could not load games.</p>'; return; }
+
+  const records = await Promise.all(keys.map(async k => ({ key:k, data: await sGet(k) })));
+  const approved = records.filter(r => r.data && r.data.status === 'approved');
+
+  if(approved.length === 0){ el.innerHTML = '<p class="sub">No published games yet.</p>'; return; }
+
+  el.innerHTML = approved.map(r => {
+    const s = r.data;
+    return `
+      <div class="lb-row" style="align-items:center;">
+        <span>${escapeHtml(s.title)}<br><span style="color:var(--text-dim); font-size:11px; word-break:break-all;">${escapeHtml(s.link)}</span></span>
+        <button class="btn ghost" data-delgame="${r.key}" style="color:var(--pink); border-color:var(--pink); font-size:12px; padding:5px 10px; flex-shrink:0;">Delete</button>
+      </div>`;
+  }).join('');
+
+  el.querySelectorAll('[data-delgame]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.dataset.delgame;
+      if(!confirm('Remove this game from Rumpus? This can\'t be undone.')) return;
+      await sDelete(key);
+      await refreshAdminGames();
+      await loadCommunityGames();
+      renderGrid();
+    };
+  });
+}
+
+function exportAllData(){
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('rumpus:')) data[k] = localStorage.getItem(k);
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `rumpus-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importAllData(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      let count = 0;
+      Object.keys(data).forEach(k => {
+        if(k.startsWith('rumpus:')){ localStorage.setItem(k, data[k]); count++; }
+      });
+      alert(`Restored ${count} record(s). Reloading now.`);
+      window.location.reload();
+    }catch(e){ alert('Could not read that backup file — make sure it\'s an unedited Rumpus export.'); }
+  };
+  reader.readAsText(file);
+}
+
+async function refreshAdminSubs(){
+  const el = document.getElementById('adminSubs');
+  if(!el) return;
+  let keys = [];
+  try{
+    const res = await sList('rumpus:submission:');
+    keys = res ? res.keys : [];
+  }catch(e){ el.innerHTML = '<p class="sub">Could not load submissions.</p>'; return; }
+
+  const records = await Promise.all(keys.map(async k => ({ key:k, data: await sGet(k) })));
+  const pending = records.filter(r => r.data && r.data.status === 'pending');
+
+  if(pending.length === 0){ el.innerHTML = '<p class="sub">No pending submissions.</p>'; return; }
+
+  el.innerHTML = pending.map(r => {
+    const s = r.data;
+    return `
+      <div style="border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:8px; display:flex; gap:10px;">
+        <div style="width:48px; height:48px; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--surface); display:flex; align-items:center; justify-content:center;">
+          ${s.thumbnail ? `<img src="${s.thumbnail}" style="width:100%;height:100%;object-fit:cover;">` : '🎮'}
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:700; font-size:13px;">${escapeHtml(s.title)}</div>
+          <div style="font-size:11px; color:var(--text-dim); word-break:break-all;">${escapeHtml(s.link)}</div>
+          <div style="font-size:12px; color:var(--text-dim); margin:4px 0;">${escapeHtml(s.description)}</div>
+          <div style="font-size:11px; color:var(--text-dim);">from ${escapeHtml(s.submitterEmail)}</div>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn primary" data-accept="${r.key}" style="font-size:12px; padding:5px 12px;">Accept</button>
+            <button class="btn ghost" data-deny="${r.key}" style="font-size:12px; padding:5px 12px; color:var(--pink); border-color:var(--pink);">Deny</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  el.querySelectorAll('[data-accept]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.dataset.accept;
+      const rec = await sGet(key);
+      if(!rec) return;
+      rec.status = 'approved';
+      await sSet(key, rec);
+      await refreshAdminSubs();
+      await refreshAdminGames();
+      await loadCommunityGames();
+      renderGrid();
+    };
+  });
+  el.querySelectorAll('[data-deny]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.dataset.deny;
+      const rec = await sGet(key);
+      if(!rec) return;
+      rec.status = 'denied';
+      await sSet(key, rec);
+      await refreshAdminSubs();
+    };
+  });
+}
+
+async function refreshAdminList(){
+  const listEl = document.getElementById('adminList');
+  if(!listEl) return;
+  let keys = [];
+  try{
+    const res = await sList('rumpus:user:');
+    keys = res ? res.keys : [];
+  }catch(e){ listEl.innerHTML = '<p class="sub">Could not load accounts.</p>'; return; }
+
+  if(keys.length === 0){ listEl.innerHTML = '<p class="sub">No accounts found.</p>'; return; }
+
+  const records = await Promise.all(keys.map(async k => ({ key:k, data: await sGet(k) })));
+  listEl.innerHTML = records.filter(r=>r.data).map(r => {
+    const u = r.data;
+    const isSelf = currentUser && u.username.toLowerCase() === currentUser.username.toLowerCase();
+    return `
+      <div class="lb-row" style="align-items:center;">
+        <span>${escapeHtml(u.username)}${u.isAdmin || u.email===ADMIN_EMAIL ? ' 👑' : ''}<br><span style="color:var(--text-dim); font-size:11px;">${escapeHtml(u.email||'no email on file')}</span></span>
+        <button class="btn ghost" data-del="${r.key}" style="color:var(--pink); border-color:var(--pink); font-size:12px; padding:5px 10px;">${isSelf ? 'Delete (you)' : 'Delete'}</button>
+      </div>`;
+  }).join('');
+
+  listEl.querySelectorAll('[data-del]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.dataset.del;
+      const uname = key.replace('rumpus:user:','');
+      if(!confirm(`Permanently delete the account "${uname}"? This can't be undone.`)) return;
+      try{
+        await sDelete(key);
+        if(currentUser && key === 'rumpus:user:' + currentUser.username.toLowerCase()){
+          logout();
+          document.getElementById('authOverlay').classList.add('hidden');
+          return;
+        }
+        await refreshAdminList();
+      }catch(e){ alert('Could not delete that account. Try again.'); }
+    };
+  });
+}
+
+function openProfile(){
+  document.getElementById('authOverlay').classList.remove('hidden');
+  const body = document.getElementById('authModalBody');
+  const scores = currentUser.scores || {};
+  const rows = GAMES.filter(g => g.playable).map(g => {
+    const v = scores[g.id];
+    const display = formatScore(g.id, v);
+    return `<div class="lb-row"><span>${g.icon} ${g.name}</span><span>${display}</span></div>`;
+  }).join('');
+  body.innerHTML = `
+    <h2>${escapeHtml(currentUser.username)}</h2>
+    <p class="sub">Your saved progress across Rumpus.</p>
+    <div class="leaderboard">${rows}</div>
+    <button class="btn ghost" style="width:100%; margin-top:18px;" id="closeProfile">Close</button>
+  `;
+  document.getElementById('closeProfile').onclick = () => document.getElementById('authOverlay').classList.add('hidden');
+}
+function formatScore(gameId, v){
+  if(v === undefined || v === null) return '—';
+  if(gameId === 'match') return `${v.score} pts (${v.moves} moves)`;
+  if(gameId === 'tictac') return `${v.wins}W / ${v.losses}L / ${v.draws}D`;
+  if(gameId === 'wordy') return `${v}/6 guesses`;
+  if(gameId === 'orbit') return `${v}s`;
+  return String(v);
+}
+
+/* ======================= category pills ======================= */
+function renderPills(){
+  const bar = document.getElementById('pillbar');
+  bar.innerHTML = CATEGORIES.map(c =>
+    `<button class="pill ${c===activeCategory?'active':''}" data-cat="${c}">${c}</button>`
+  ).join('');
+  bar.querySelectorAll('.pill').forEach(p => {
+    p.onclick = () => { setCategory(p.dataset.cat); };
+  });
+  document.querySelectorAll('.side-item[data-cat]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === activeCategory);
+  });
+}
+function setCategory(cat){
+  activeCategory = cat;
+  renderPills();
+  renderGrid();
+}
+document.querySelectorAll('.side-item[data-cat]').forEach(btn => {
+  btn.onclick = () => setCategory(btn.dataset.cat);
+});
+document.getElementById('sideSubmit').onclick = () => openSubmitForm();
+
+/* ======================= game grid ======================= */
+async function loadCommunityGames(){
+  try{
+    const res = await sList('rumpus:submission:');
+    const keys = res ? res.keys : [];
+    const records = await Promise.all(keys.map(k => sGet(k)));
+    communityGames = records.filter(r => r && r.status === 'approved').map(r => ({
+      id: r.id, name: r.title, cat: 'Community', icon: '🎮', color: '#57e3b0',
+      desc: r.description, playable: true, external: true, link: r.link, thumbnail: r.thumbnail
+    }));
+  }catch(e){ communityGames = []; }
+}
+
+async function renderGrid(){
+  const grid = document.getElementById('gameGrid');
+  const empty = document.getElementById('emptyState');
+  const allGames = [...GAMES, ...communityGames];
+  let list = allGames.filter(g => activeCategory==='All' || g.cat===activeCategory);
+  if(searchQuery){
+    const q = searchQuery.toLowerCase();
+    list = list.filter(g => g.name.toLowerCase().includes(q) || g.cat.toLowerCase().includes(q));
+  }
+  document.getElementById('gridTitle').textContent = activeCategory === 'All' ? 'All games' : activeCategory;
+  document.getElementById('gridCount').textContent = `${list.length} game${list.length!==1?'s':''}`;
+
+  if(list.length === 0){
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  grid.innerHTML = list.map(g => {
+    const best = currentUser && !g.external ? formatScore(g.id, (currentUser.scores||{})[g.id]) : null;
+    const thumbInner = g.thumbnail ? `<img src="${g.thumbnail}" alt="" style="width:100%;height:100%;object-fit:cover;">` : g.icon;
+    return `
+    <div class="card ${g.playable?'':'soon'}" data-id="${g.id}">
+      <div class="notch"></div>
+      <div class="thumb" style="background:${g.color}22; overflow:hidden;">${thumbInner}</div>
+      <div class="card-body">
+        <h3>${escapeHtml(g.name)}</h3>
+        <div class="card-tag">${g.cat}${g.playable ? '' : ' · Coming soon'}${g.external ? ' · Community' : ''}</div>
+        <div class="card-foot">
+          <span class="best">${best ? best : ''}</span>
+          <span class="play-btn">${g.playable ? (g.external ? 'Open' : 'Play') : 'Soon'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.card').forEach(card => {
+    const g = allGames.find(x => x.id === card.dataset.id);
+    if(!g.playable) return;
+    card.onclick = () => { g.external ? openExternalGame(g) : openGame(g.id); };
+  });
+}
+
+/* ======================= score saving ======================= */
+async function saveScore(gameId, value){
+  if(!currentUser) return; // guests can play, just not save
+  const key = 'rumpus:user:' + currentUser.username.toLowerCase();
+  currentUser.scores = currentUser.scores || {};
+  const prev = currentUser.scores[gameId];
+  let better = true;
+  if(gameId === 'match' && prev) better = value.score > prev.score;
+  else if(gameId === 'tictac' && prev){ /* always merge, handled by caller */ }
+  else if(prev !== undefined && typeof value === 'number') better = value > prev;
+
+  if(gameId === 'tictac'){
+    const cur = prev || { wins:0, losses:0, draws:0 };
+    cur[value] = (cur[value]||0) + 1;
+    currentUser.scores[gameId] = cur;
+  } else if(gameId === 'wordy'){
+    if(prev === undefined || value < prev) currentUser.scores[gameId] = value;
+  } else if(better || prev === undefined){
+    currentUser.scores[gameId] = value;
+  }
+  await sSet(key, currentUser);
+  renderGrid();
+}
+
+/* ======================= submit-a-game flow ======================= */
+function openSubmitForm(){
+  document.getElementById('submitOverlay').classList.remove('hidden');
+  const body = document.getElementById('submitModalBody');
+  body.innerHTML = `
+    <h2>Submit your game</h2>
+    <p class="sub">Send your game to Rumpus for review. If approved, it'll appear in the Community category for everyone to play.</p>
+    <div class="field"><label>Title</label><input id="subTitle" type="text" maxlength="60" /></div>
+    <div class="field"><label>Link to play</label><input id="subLink" type="url" placeholder="https://..." /></div>
+    <div class="field"><label>Thumbnail (optional image file)</label><input id="subThumb" type="file" accept="image/*" /></div>
+    <div class="field"><label>Description</label><textarea id="subDesc" rows="3" maxlength="300" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:14px; font-family:inherit; resize:vertical;"></textarea></div>
+    <div class="field"><label>Your contact email</label><input id="subEmail" type="email" value="${currentUser && currentUser.email ? escapeHtml(currentUser.email) : ''}" /></div>
+    <div class="form-msg" id="subMsg"></div>
+    <button class="btn primary" style="width:100%" id="subSubmit">Send for review</button>
+  `;
+  document.getElementById('subSubmit').onclick = handleSubmitGame;
+}
+
+async function handleSubmitGame(){
+  const title = document.getElementById('subTitle').value.trim();
+  const link = document.getElementById('subLink').value.trim();
+  const desc = document.getElementById('subDesc').value.trim();
+  const email = document.getElementById('subEmail').value.trim();
+  const fileInput = document.getElementById('subThumb');
+  const msg = document.getElementById('subMsg');
+
+  if(!title || !link || !desc || !email){ msg.textContent = 'Please fill in title, link, description, and your email.'; return; }
+  if(!/^https?:\/\//i.test(link)){ msg.textContent = 'Link should start with http:// or https://'; return; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ msg.textContent = 'Enter a valid contact email.'; return; }
+
+  const btn = document.getElementById('subSubmit');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const finish = async (thumbnailDataUrl) => {
+    const id = 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    const record = {
+      id, title, link, description: desc, thumbnail: thumbnailDataUrl || null,
+      submitterEmail: email, submitterUsername: currentUser ? currentUser.username : null,
+      status: 'pending', createdAt: Date.now()
+    };
+    const ok = await sSet('rumpus:submission:' + id, record);
+    if(!ok){ msg.textContent = 'Something went wrong saving your submission. Try again.'; btn.disabled=false; btn.textContent='Send for review'; return; }
+
+    // Real email via Formspree, if configured.
+    if(FORMSPREE_ENDPOINT){
+      try{
+        await fetch(FORMSPREE_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ title, link, description: desc, submitterEmail: email, submitterUsername: currentUser ? currentUser.username : 'guest' })
+        });
+      }catch(e){ /* non-fatal — mailto below still covers notification */ }
+    }
+
+    // Also open a pre-filled Gmail compose window as a manual fallback/backup.
+    const subject = encodeURIComponent(`Rumpus game submission: ${title}`);
+    const bodyText = encodeURIComponent(
+      `New game submitted for review.\n\nTitle: ${title}\nLink: ${link}\nDescription: ${desc}\nSubmitted by: ${currentUser ? currentUser.username : 'guest'} (${email})\n\nReview it in the Rumpus Admin panel to accept or deny.`
+    );
+    const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(ADMIN_EMAIL)}&su=${subject}&body=${bodyText}`;
+    window.open(gmailComposeUrl, '_blank');
+
+    document.getElementById('submitModalBody').innerHTML = `
+      <h2>Submitted!</h2>
+      <p class="sub">Your game is saved for review, and we've opened a Gmail draft to the admin — hit send in the Gmail tab to notify them right away. You'll see it appear here once it's accepted.</p>
+      <button class="btn primary" style="width:100%" id="subDone">Done</button>
+    `;
+    document.getElementById('subDone').onclick = () => document.getElementById('submitOverlay').classList.add('hidden');
+  };
+
+  const file = fileInput.files && fileInput.files[0];
+  if(file){
+    if(file.size > 900000){ msg.textContent = 'That image is a bit large — please use one under ~900KB.'; btn.disabled=false; btn.textContent='Send for review'; return; }
+    const reader = new FileReader();
+    reader.onload = () => finish(reader.result);
+    reader.onerror = () => finish(null);
+    reader.readAsDataURL(file);
+  } else {
+    finish(null);
+  }
+}
+
+document.getElementById('submitGameBtn').onclick = openSubmitForm;
+document.getElementById('submitOverlay').addEventListener('click', e => { if(e.target.id==='submitOverlay') e.currentTarget.classList.add('hidden'); });
+
+/* ======================= game toolbar: fullscreen / like / dislike / plays ======================= */
+async function renderGameToolbar(containerEl, gameId, stageEl){
+  const key = 'rumpus:stats:' + gameId;
+  let stats = (await sGet(key)) || { likes:0, dislikes:0, plays:0, myVote:null };
+  stats.plays = (stats.plays||0) + 1;
+  await sSet(key, stats);
+
+  function draw(){
+    containerEl.innerHTML = `
+      <div class="gt-left">
+        <button class="gt-btn ${stats.myVote==='like'?'active':''}" id="gtLike">👍 <span>${stats.likes}</span></button>
+        <button class="gt-btn ${stats.myVote==='dislike'?'active':''}" id="gtDislike">👎 <span>${stats.dislikes}</span></button>
+        <button class="gt-btn" id="gtFullscreen">⛶ Fullscreen</button>
+      </div>
+      <div class="gt-plays">${stats.plays.toLocaleString()} play${stats.plays!==1?'s':''}</div>
+    `;
+    document.getElementById('gtLike').onclick = async () => {
+      if(stats.myVote === 'like'){ stats.likes--; stats.myVote = null; }
+      else { if(stats.myVote === 'dislike') stats.dislikes--; stats.likes++; stats.myVote = 'like'; }
+      await sSet(key, stats); draw();
+    };
+    document.getElementById('gtDislike').onclick = async () => {
+      if(stats.myVote === 'dislike'){ stats.dislikes--; stats.myVote = null; }
+      else { if(stats.myVote === 'like') stats.likes--; stats.dislikes++; stats.myVote = 'dislike'; }
+      await sSet(key, stats); draw();
+    };
+    document.getElementById('gtFullscreen').onclick = () => {
+      const req = stageEl.requestFullscreen || stageEl.webkitRequestFullscreen || stageEl.msRequestFullscreen;
+      if(req) req.call(stageEl);
+    };
+  }
+  draw();
+}
+
+/* ======================= external (community) game embed ======================= */
+function openExternalGame(g){
+  document.getElementById('gameOverlay').classList.remove('hidden');
+  const body = document.getElementById('gameModalBody');
+  body.innerHTML = `
+    <div class="game-head">
+      <div class="gh-title"><span class="icon">${g.icon}</span><h2>${escapeHtml(g.name)}</h2></div>
+    </div>
+    <div class="game-stats"><span>${escapeHtml(g.desc||'')}</span><span><a href="${g.link}" target="_blank" rel="noopener" style="color:var(--mint);">Open in new tab ↗</a></span></div>
+    <div class="game-stage" id="gameStage" style="padding:0; overflow:hidden;">
+      <iframe src="${g.link}" title="${escapeHtml(g.name)}" style="width:100%; height:480px; border:none; border-radius:10px; background:#0a0916;" allow="fullscreen; autoplay; gamepad; accelerometer; gyroscope" allowfullscreen></iframe>
+    </div>
+    <div class="game-toolbar" id="gameToolbar"></div>
+    <div class="game-note">If the game doesn't load here, some sites block embedding — use "Open in new tab" instead.</div>
+  `;
+  renderGameToolbar(document.getElementById('gameToolbar'), g.id, document.getElementById('gameStage'));
+}
+
+/* ======================= game modal shell ======================= */
+function openGame(id){
+  const g = GAMES.find(x => x.id === id);
+  document.getElementById('gameOverlay').classList.remove('hidden');
+  const body = document.getElementById('gameModalBody');
+  body.innerHTML = `
+    <div class="game-head">
+      <div class="gh-title"><span class="icon">${g.icon}</span><h2>${g.name}</h2></div>
+    </div>
+    <div class="game-stats" id="gameStats"></div>
+    <div class="game-stage" id="gameStage"></div>
+    <div class="game-toolbar" id="gameToolbar"></div>
+    <div class="game-note" id="gameNote">${g.desc}</div>
+  `;
+  GAME_INIT[id](document.getElementById('gameStage'), document.getElementById('gameStats'));
+  renderGameToolbar(document.getElementById('gameToolbar'), id, document.getElementById('gameStage'));
+}
+
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.onclick = () => document.getElementById(btn.dataset.close).classList.add('hidden');
+});
+document.getElementById('authOverlay').addEventListener('click', e => { if(e.target.id==='authOverlay') e.currentTarget.classList.add('hidden'); });
+document.getElementById('gameOverlay').addEventListener('click', e => { if(e.target.id==='gameOverlay'){ e.currentTarget.classList.add('hidden'); stopAllLoops(); } });
+
+let activeLoops = [];
+function stopAllLoops(){ activeLoops.forEach(id => clearInterval(id)); activeLoops = []; document.removeEventListener('keydown', activeKeyHandler || (()=>{})); }
+let activeKeyHandler = null;
+
+/* ======================= GAME 1: Serpent Loop (snake) ======================= */
+function initSnake(stage, statsEl, isHero){
+  const canvas = document.createElement('canvas');
+  const cell = 16, cols = 15, rows = 15;
+  canvas.width = cols*cell; canvas.height = rows*cell;
+  canvas.style.background = '#0a0916';
+  canvas.style.borderRadius = '10px';
+  stage.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  let snake = [{x:7,y:7}], dir = {x:1,y:0}, nextDir = dir, food = randCell(), score = 0, paused=false, over=false;
+  function randCell(){ return {x: Math.floor(Math.random()*cols), y: Math.floor(Math.random()*rows)}; }
+
+  function draw(){
+    ctx.fillStyle = '#0a0916'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#f2c14e';
+    ctx.fillRect(food.x*cell, food.y*cell, cell-2, cell-2);
+    snake.forEach((s,i) => {
+      ctx.fillStyle = i===0 ? '#57e3b0' : '#3fae8a';
+      ctx.fillRect(s.x*cell, s.y*cell, cell-2, cell-2);
+    });
+    if(statsEl) statsEl.innerHTML = `<span><b>${score}</b> length</span><span>${over?'Game over — press R to restart':(paused?'Paused':'')}</span>`;
+  }
+  function tick(){
+    if(paused || over) return;
+    dir = nextDir;
+    const head = {x: snake[0].x+dir.x, y: snake[0].y+dir.y};
+    if(head.x<0||head.y<0||head.x>=cols||head.y>=rows||snake.some(s=>s.x===head.x&&s.y===head.y)){
+      over = true; draw();
+      if(!isHero) saveScore('snake', score);
+      return;
+    }
+    snake.unshift(head);
+    if(head.x===food.x && head.y===food.y){ score++; food = randCell(); }
+    else snake.pop();
+    draw();
+  }
+  function reset(){ snake=[{x:7,y:7}]; dir={x:1,y:0}; nextDir=dir; food=randCell(); score=0; paused=false; over=false; draw(); }
+
+  const handler = (e) => {
+    if(!stage.isConnected) return;
+    const map = {ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0}};
+    if(map[e.key]){
+      const m = map[e.key];
+      if(!(m.x === -dir.x && m.y === -dir.y)) nextDir = m;
+      e.preventDefault();
+    } else if(e.key === ' '){ paused = !paused; draw(); }
+    else if((e.key==='r'||e.key==='R') && over){ reset(); }
+  };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+  const loop = setInterval(tick, 130);
+  activeLoops.push(loop);
+  draw();
+}
+
+/* ======================= GAME 2: Flip Match ======================= */
+function initMatch(stage, statsEl){
+  const symbols = ['🍄','🍒','⭐','🌙','🍩','🎈','🦊','🐳'];
+  const deck = shuffle([...symbols, ...symbols]);
+  let first=null, second=null, lock=false, moves=0, matched=0, seconds=0;
+
+  const grid = document.createElement('div');
+  grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(4, 64px)'; grid.style.gap='8px';
+  stage.appendChild(grid);
+
+  const timer = setInterval(()=>{ seconds++; updateStats(); }, 1000);
+  activeLoops.push(timer);
+
+  function updateStats(){
+    const score = Math.max(0, 1000 - moves*15 - seconds*4);
+    if(statsEl) statsEl.innerHTML = `<span><b>${moves}</b> moves</span><span><b>${seconds}</b>s</span><span><b>${matched/2|0}/${symbols.length}</b> pairs</span>`;
+    return score;
+  }
+
+  deck.forEach((sym, i) => {
+    const card = document.createElement('button');
+    card.style.cssText = 'width:64px;height:64px;border-radius:10px;border:1px solid #352f57;background:#2a2549;font-size:26px;display:flex;align-items:center;justify-content:center;';
+    card.dataset.sym = sym; card.dataset.state='hidden';
+    card.onclick = () => flip(card);
+    grid.appendChild(card);
+  });
+
+  function flip(card){
+    if(lock || card.dataset.state !== 'hidden') return;
+    card.textContent = card.dataset.sym; card.dataset.state='shown'; card.style.background = '#3a3364';
+    if(!first){ first = card; return; }
+    second = card; moves++; lock = true;
+    if(first.dataset.sym === second.dataset.sym){
+      first.dataset.state='matched'; second.dataset.state='matched';
+      first.style.background = second.style.background = '#1c3d31';
+      matched += 2; first=null; second=null; lock=false;
+      updateStats();
+      if(matched === deck.length){
+        clearInterval(timer);
+        const score = updateStats();
+        stage.querySelectorAll('button').forEach(b=>b.disabled=true);
+        if(statsEl) statsEl.innerHTML += ' — solved!';
+        saveScore('match', { score, moves });
+      }
+    } else {
+      setTimeout(()=>{
+        first.textContent=''; second.textContent='';
+        first.dataset.state='hidden'; second.dataset.state='hidden';
+        first.style.background = second.style.background = '#2a2549';
+        first=null; second=null; lock=false;
+      }, 650);
+    }
+    updateStats();
+  }
+  function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]); }
+  updateStats();
+}
+
+/* ======================= GAME 3: Merge Tiles (2048-style) ======================= */
+function initMerge(stage, statsEl){
+  const size = 4;
+  let board = Array.from({length:size},()=>Array(size).fill(0));
+  let score = 0, over = false;
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:grid; grid-template-columns:repeat(4,64px); grid-template-rows:repeat(4,64px); gap:8px; background:#0a0916; padding:8px; border-radius:10px;';
+  stage.appendChild(wrap);
+  const cells = [];
+  for(let i=0;i<16;i++){
+    const c = document.createElement('div');
+    c.style.cssText = 'border-radius:8px; background:#221e3c; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; color:#f3f1fb;';
+    wrap.appendChild(c); cells.push(c);
+  }
+  const tileColor = v => ({2:'#2a2549',4:'#352f57',8:'#63b3f2',16:'#57e3b0',32:'#f2c14e',64:'#f2884e',128:'#ef6f9e',256:'#a680f2'}[v] || '#f2c14e');
+
+  function addRandom(){
+    const empties = [];
+    for(let r=0;r<size;r++) for(let c=0;c<size;c++) if(board[r][c]===0) empties.push([r,c]);
+    if(empties.length===0) return;
+    const [r,c] = empties[Math.floor(Math.random()*empties.length)];
+    board[r][c] = Math.random() < 0.9 ? 2 : 4;
+  }
+  function render(){
+    let i=0;
+    for(let r=0;r<size;r++) for(let c=0;c<size;c++,i++){
+      const v = board[r][c];
+      cells[i].textContent = v || '';
+      cells[i].style.background = v ? tileColor(v) : '#221e3c';
+    }
+    if(statsEl) statsEl.innerHTML = `<span><b>${score}</b> score</span><span>${over ? 'No moves left — press R to restart' : 'Arrow keys to slide'}</span>`;
+  }
+  function slideRow(row){
+    let vals = row.filter(v=>v!==0);
+    for(let i=0;i<vals.length-1;i++){
+      if(vals[i] === vals[i+1]){ vals[i]*=2; score += vals[i]; vals.splice(i+1,1); }
+    }
+    while(vals.length < size) vals.push(0);
+    return vals;
+  }
+  function rotateBoard(b){ return b[0].map((_,c)=> b.map(row=>row[c]).reverse()); }
+  function move(dir){
+    let b = board.map(r=>[...r]);
+    let rotations = {left:0, up:1, right:2, down:3}[dir];
+    for(let i=0;i<rotations;i++) b = rotateBoard(b);
+    let moved = false;
+    const newB = b.map(row => {
+      const slid = slideRow(row);
+      if(JSON.stringify(slid) !== JSON.stringify(row)) moved = true;
+      return slid;
+    });
+    let result = newB;
+    for(let i=0;i<(4-rotations)%4;i++) result = rotateBoard(result);
+    if(moved){ board = result; addRandom(); }
+    checkOver();
+    render();
+  }
+  function checkOver(){
+    for(let r=0;r<size;r++) for(let c=0;c<size;c++){
+      if(board[r][c]===0) return;
+      if(c<size-1 && board[r][c]===board[r][c+1]) return;
+      if(r<size-1 && board[r][c]===board[r+1][c]) return;
+    }
+    over = true;
+    saveScore('merge', score);
+  }
+  function reset(){ board = Array.from({length:size},()=>Array(size).fill(0)); score=0; over=false; addRandom(); addRandom(); render(); }
+
+  const handler = (e) => {
+    if(!stage.isConnected) return;
+    const map = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
+    if(map[e.key] && !over){ move(map[e.key]); e.preventDefault(); }
+    else if((e.key==='r'||e.key==='R') && over){ reset(); }
+  };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+  reset();
+}
+
+/* ======================= GAME 4: Tic Tac Duel ======================= */
+function initTicTac(stage, statsEl){
+  let board = Array(9).fill(null), gameOver = false;
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:grid; grid-template-columns:repeat(3,80px); grid-template-rows:repeat(3,80px); gap:8px;';
+  stage.appendChild(wrap);
+  const cells = [];
+  for(let i=0;i<9;i++){
+    const c = document.createElement('button');
+    c.style.cssText = 'border-radius:10px; background:#221e3c; border:1px solid #352f57; font-size:30px; font-weight:800; color:#f3f1fb;';
+    c.onclick = () => playerMove(i);
+    wrap.appendChild(c); cells.push(c);
+  }
+  function updateStats(msg){
+    if(statsEl) statsEl.innerHTML = `<span>${msg || 'Your move — you are X'}</span>`;
+  }
+  const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  function winner(b){
+    for(const [a,c,d] of lines) if(b[a] && b[a]===b[c] && b[a]===b[d]) return b[a];
+    return b.every(x=>x) ? 'draw' : null;
+  }
+  function render(){ board.forEach((v,i)=> cells[i].textContent = v || ''); }
+  function playerMove(i){
+    if(gameOver || board[i]) return;
+    board[i] = 'X'; render();
+    const w = winner(board);
+    if(w){ finish(w); return; }
+    setTimeout(cpuMove, 300);
+  }
+  function cpuMove(){
+    const empties = board.map((v,i)=>v?null:i).filter(v=>v!==null);
+    if(empties.length===0) return;
+    // slightly smart: win if possible, block if needed, else random
+    let move = findWinningMove('O') ?? findWinningMove('X') ?? empties[Math.floor(Math.random()*empties.length)];
+    board[move] = 'O'; render();
+    const w = winner(board);
+    if(w) finish(w);
+    else updateStats('Your move — you are X');
+  }
+  function findWinningMove(sym){
+    for(const [a,c,d] of lines){
+      const trio = [a,c,d], vals = trio.map(i=>board[i]);
+      const countSym = vals.filter(v=>v===sym).length, countEmpty = vals.filter(v=>!v).length;
+      if(countSym===2 && countEmpty===1) return trio[vals.findIndex(v=>!v)];
+    }
+    return null;
+  }
+  function finish(w){
+    gameOver = true;
+    let result = w==='draw' ? 'draws' : (w==='X' ? 'wins' : 'losses');
+    updateStats(w==='draw' ? "It's a draw — press R to play again" : (w==='X' ? 'You win! Press R to play again' : 'CPU wins — press R to try again'));
+    saveScore('tictac', result);
+  }
+  function reset(){ board = Array(9).fill(null); gameOver=false; render(); updateStats(); }
+  const handler = (e) => { if((e.key==='r'||e.key==='R') && stage.isConnected) reset(); };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+  reset();
+}
+
+/* ======================= GAME 5: Sky Hopper (flappy-style) ======================= */
+function initHopper(stage, statsEl){
+  const canvas = document.createElement('canvas');
+  canvas.width = 320; canvas.height = 300;
+  canvas.style.background = '#0a0916'; canvas.style.borderRadius='10px';
+  stage.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  let birdY = 140, vel = 0, gravity = 0.35, pipes = [], score = 0, over = false, started=false;
+  const gap = 90, pipeW = 36;
+
+  function spawnPipe(){ const top = 40 + Math.random()*130; pipes.push({x: canvas.width, top, passed:false}); }
+  function reset(){ birdY=140; vel=0; pipes=[]; score=0; over=false; started=false; spawnPipe(); draw(); }
+
+  function flap(){
+    if(over){ reset(); return; }
+    started = true;
+    vel = -6.2;
+  }
+  canvas.addEventListener('mousedown', flap);
+  canvas.addEventListener('touchstart', (e)=>{ e.preventDefault(); flap(); });
+  const handler = (e) => { if(e.key===' '){ e.preventDefault(); flap(); } };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+
+  function tick(){
+    if(!started || over){ draw(); return; }
+    vel += gravity; birdY += vel;
+    pipes.forEach(p => p.x -= 2.6);
+    if(pipes.length && pipes[0].x < -pipeW) pipes.shift();
+    if(pipes.length && pipes[pipes.length-1].x < canvas.width - 170) spawnPipe();
+    pipes.forEach(p => {
+      if(!p.passed && p.x + pipeW < 60){ p.passed = true; score++; }
+      const birdX = 60;
+      if(birdX+10 > p.x && birdX-10 < p.x+pipeW){
+        if(birdY-10 < p.top || birdY+10 > p.top+gap) endGame();
+      }
+    });
+    if(birdY > canvas.height-8 || birdY < 0) endGame();
+    draw();
+  }
+  function endGame(){
+    if(over) return;
+    over = true;
+    saveScore('hopper', score);
+  }
+  function draw(){
+    ctx.fillStyle = '#0a0916'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#2a2549';
+    pipes.forEach(p => {
+      ctx.fillRect(p.x, 0, pipeW, p.top);
+      ctx.fillRect(p.x, p.top+gap, pipeW, canvas.height - p.top - gap);
+    });
+    ctx.fillStyle = '#f2c14e';
+    ctx.beginPath(); ctx.arc(60, birdY, 10, 0, Math.PI*2); ctx.fill();
+    if(statsEl) statsEl.innerHTML = `<span><b>${score}</b> pipes</span><span>${over ? 'Crashed — click/space to retry' : (started ? '' : 'Click or press space to start')}</span>`;
+  }
+  const loop = setInterval(tick, 20);
+  activeLoops.push(loop);
+  draw();
+}
+
+/* ======================= GAME 6: Bug Squash ======================= */
+function initSquash(stage, statsEl){
+  let score = 0, timeLeft = 30, running = true;
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:grid; grid-template-columns:repeat(3,84px); grid-template-rows:repeat(3,84px); gap:10px;';
+  stage.appendChild(wrap);
+  const holes = [];
+  for(let i=0;i<9;i++){
+    const h = document.createElement('button');
+    h.style.cssText = 'border-radius:50%; background:#221e3c; border:2px solid #352f57; font-size:32px;';
+    h.onclick = () => { if(h.dataset.active === '1' && running){ score++; h.dataset.active='0'; h.textContent=''; updateStats(); } };
+    wrap.appendChild(h); holes.push(h);
+  }
+  function updateStats(){
+    if(statsEl) statsEl.innerHTML = `<span><b>${score}</b> squashed</span><span><b>${timeLeft}</b>s left</span>`;
+  }
+  function popRandom(){
+    if(!running) return;
+    holes.forEach(h => { h.dataset.active='0'; h.textContent=''; });
+    const h = holes[Math.floor(Math.random()*holes.length)];
+    h.dataset.active = '1'; h.textContent = '🐛';
+  }
+  const popLoop = setInterval(popRandom, 650);
+  const clock = setInterval(() => {
+    timeLeft--;
+    if(timeLeft <= 0){
+      running = false; timeLeft = 0;
+      holes.forEach(h => { h.dataset.active='0'; h.textContent=''; });
+      clearInterval(popLoop); clearInterval(clock);
+      updateStats();
+      if(statsEl) statsEl.innerHTML += ' — time! Reopen the game to play again';
+      saveScore('squash', score);
+      return;
+    }
+    updateStats();
+  }, 1000);
+  activeLoops.push(popLoop, clock);
+  updateStats();
+}
+
+/* ======================= GAME 7: Orbit Runner ======================= */
+function initOrbit(stage, statsEl){
+  const canvas = document.createElement('canvas');
+  canvas.width = 300; canvas.height = 320;
+  canvas.style.background = '#0a0916'; canvas.style.borderRadius = '10px';
+  stage.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  let shipX = 150, over = false, started = false, elapsed = 0, rocks = [], spawnTimer = 0;
+  const shipY = 292, shipR = 9;
+
+  function reset(){ shipX = 150; over = false; started = false; elapsed = 0; rocks = []; spawnTimer = 0; draw(); }
+
+  function spawnRock(){
+    const speed = 1.6 + Math.min(elapsed/6, 4.5); // tightens (speeds up) over time
+    rocks.push({ x: 20 + Math.random()*260, y: -14, r: 8 + Math.random()*10, speed });
+  }
+
+  function tick(dt){
+    if(!started || over) return;
+    elapsed += dt;
+    spawnTimer -= dt;
+    const spawnEvery = Math.max(0.28, 0.9 - elapsed*0.01); // spawns faster over time
+    if(spawnTimer <= 0){ spawnRock(); spawnTimer = spawnEvery; }
+    rocks.forEach(r => r.y += r.speed);
+    rocks = rocks.filter(r => r.y < canvas.height + 20);
+    for(const r of rocks){
+      const dx = r.x - shipX, dy = r.y - shipY;
+      if(Math.sqrt(dx*dx+dy*dy) < r.r + shipR){ endGame(); break; }
+    }
+  }
+  function endGame(){
+    if(over) return;
+    over = true;
+    saveScore('orbit', Math.floor(elapsed));
+  }
+  function draw(){
+    ctx.fillStyle = '#0a0916'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // starfield
+    ctx.fillStyle = '#241f42';
+    for(let i=0;i<18;i++) ctx.fillRect((i*47+13)%canvas.width, (i*83+ (elapsed*20|0))%canvas.height, 2, 2);
+    ctx.fillStyle = '#a680f2';
+    rocks.forEach(r => { ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI*2); ctx.fill(); });
+    ctx.fillStyle = over ? '#ef6f9e' : '#57e3b0';
+    ctx.beginPath(); ctx.arc(shipX, shipY, shipR, 0, Math.PI*2); ctx.fill();
+    if(statsEl) statsEl.innerHTML = `<span><b>${Math.floor(elapsed)}</b>s survived</span><span>${over ? 'Crashed — click or press R to retry' : (started ? 'Move with arrows / mouse' : 'Click or move to start')}</span>`;
+  }
+  function moveTo(x){
+    shipX = Math.max(shipR, Math.min(canvas.width - shipR, x));
+    started = true;
+  }
+  canvas.addEventListener('mousemove', (e) => {
+    if(over) return;
+    const rect = canvas.getBoundingClientRect();
+    moveTo((e.clientX - rect.left) * (canvas.width/rect.width));
+  });
+  canvas.addEventListener('click', () => { if(over) reset(); else started = true; });
+  const handler = (e) => {
+    if(!stage.isConnected) return;
+    if(over && (e.key==='r'||e.key==='R')){ reset(); return; }
+    if(e.key === 'ArrowLeft'){ moveTo(shipX - 18); e.preventDefault(); }
+    if(e.key === 'ArrowRight'){ moveTo(shipX + 18); e.preventDefault(); }
+  };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+
+  let last = performance.now();
+  const loop = setInterval(() => {
+    const now = performance.now();
+    const dt = (now - last) / 1000;
+    last = now;
+    tick(dt);
+    draw();
+  }, 30);
+  activeLoops.push(loop);
+  reset();
+}
+
+/* ======================= GAME 8: Wordy Grid ======================= */
+function initWordy(stage, statsEl){
+  const WORDS = ['PLANT','GRAPE','STORM','LIGHT','BRAVE','CANDY','TIGER','OCEAN','FABLE','QUILT','SPARK','GLIDE','CRISP','HONEY','MIRTH','PIANO','RIVER','CLOUD','FLAME','CHESS'];
+  const dayIndex = Math.floor(Date.now() / 86400000) % WORDS.length;
+  const answer = WORDS[dayIndex];
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:14px;';
+  stage.appendChild(wrap);
+
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid; grid-template-rows:repeat(6, 40px); gap:6px;';
+  wrap.appendChild(grid);
+  const rows = [];
+  for(let r=0;r<6;r++){
+    const rowEl = document.createElement('div');
+    rowEl.style.cssText = 'display:grid; grid-template-columns:repeat(5, 40px); gap:6px;';
+    const tiles = [];
+    for(let c=0;c<5;c++){
+      const t = document.createElement('div');
+      t.style.cssText = 'border:2px solid #352f57; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; background:#181530;';
+      rowEl.appendChild(t); tiles.push(t);
+    }
+    grid.appendChild(rowEl); rows.push(tiles);
+  }
+
+  const keyboardRows = ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
+  const kbWrap = document.createElement('div');
+  kbWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px; align-items:center;';
+  wrap.appendChild(kbWrap);
+  const keyEls = {};
+  keyboardRows.forEach((rowStr, i) => {
+    const rowEl = document.createElement('div');
+    rowEl.style.cssText = 'display:flex; gap:5px;';
+    if(i===2){
+      const enter = makeKey('ENTER', 46); rowEl.appendChild(enter);
+    }
+    rowStr.split('').forEach(ch => { const k = makeKey(ch, 30); keyEls[ch]=k; rowEl.appendChild(k); });
+    if(i===2){
+      const back = makeKey('⌫', 46); rowEl.appendChild(back);
+    }
+    kbWrap.appendChild(rowEl);
+  });
+  function makeKey(label, w){
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = `min-width:${w}px; height:38px; border-radius:6px; border:1px solid #352f57; background:#2a2549; color:#f3f1fb; font-size:12px; font-weight:700; padding:0 4px;`;
+    b.onclick = () => handleKey(label === 'ENTER' ? 'Enter' : (label === '⌫' ? 'Backspace' : label));
+    return b;
+  }
+
+  let curRow = 0, curGuess = '', done = false;
+  function updateStats(msg){
+    if(statsEl) statsEl.innerHTML = `<span>Guess ${Math.min(curRow+1,6)}/6</span><span>${msg||''}</span>`;
+  }
+  function handleKey(k){
+    if(done) return;
+    if(k === 'Backspace'){ curGuess = curGuess.slice(0,-1); renderRow(); return; }
+    if(k === 'Enter'){
+      if(curGuess.length !== 5){ updateStats('Need 5 letters'); return; }
+      submitGuess(); return;
+    }
+    if(/^[A-Z]$/.test(k) && curGuess.length < 5){ curGuess += k; renderRow(); }
+  }
+  function renderRow(){
+    const tiles = rows[curRow];
+    for(let i=0;i<5;i++) tiles[i].textContent = curGuess[i] || '';
+    updateStats();
+  }
+  function submitGuess(){
+    const tiles = rows[curRow];
+    const answerArr = answer.split('');
+    const guessArr = curGuess.split('');
+    const state = Array(5).fill('absent');
+    const pool = [...answerArr];
+    for(let i=0;i<5;i++) if(guessArr[i] === answerArr[i]){ state[i]='correct'; pool[pool.indexOf(guessArr[i])]=null; }
+    for(let i=0;i<5;i++) if(state[i]!=='correct'){
+      const idx = pool.indexOf(guessArr[i]);
+      if(idx>-1){ state[i]='present'; pool[idx]=null; }
+    }
+    const colors = { correct:'#57e3b0', present:'#f2c14e', absent:'#181530' };
+    state.forEach((s,i) => {
+      tiles[i].style.background = colors[s];
+      tiles[i].style.borderColor = colors[s]==='#181530' ? '#352f57' : colors[s];
+      const ch = guessArr[i];
+      if(keyEls[ch] && s !== 'absent') keyEls[ch].style.background = colors[s];
+      else if(keyEls[ch] && keyEls[ch].style.background !== '#57e3b0' && keyEls[ch].style.background !== '#f2c14e') keyEls[ch].style.background = '#221e3c';
+    });
+    if(curGuess === answer){
+      done = true;
+      updateStats('Solved! 🎉');
+      saveScore('wordy', curRow+1);
+      return;
+    }
+    curRow++;
+    curGuess = '';
+    if(curRow >= 6){
+      done = true;
+      updateStats(`Out of guesses — the word was ${answer}`);
+      return;
+    }
+    updateStats();
+  }
+  const handler = (e) => {
+    if(!stage.isConnected) return;
+    if(e.key === 'Enter' || e.key === 'Backspace' || /^[a-zA-Z]$/.test(e.key)){
+      handleKey(e.key.length===1 ? e.key.toUpperCase() : e.key);
+      e.preventDefault();
+    }
+  };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+  updateStats();
+}
+
+const GAME_INIT = {
+  snake: (stage, stats) => initSnake(stage, stats, false),
+  match: initMatch,
+  merge: initMerge,
+  tictac: initTicTac,
+  hopper: initHopper,
+  squash: initSquash,
+  orbit: initOrbit,
+  wordy: initWordy,
+};
+
+/* ======================= hero mini snake (autoplay-ish, playable) ======================= */
+function initHero(){
+  const canvas = document.getElementById('heroCanvas');
+  const cell = 16, cols = 15, rows = 15;
+  const ctx = canvas.getContext('2d');
+  let snake=[{x:7,y:7}], dir={x:1,y:0}, nextDir=dir, food={x:10,y:7}, over=false;
+  function randCell(){ return {x: Math.floor(Math.random()*cols), y: Math.floor(Math.random()*rows)}; }
+  function draw(){
+    ctx.fillStyle='#0a0916'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#f2c14e'; ctx.fillRect(food.x*cell, food.y*cell, cell-2, cell-2);
+    snake.forEach((s,i)=>{ ctx.fillStyle = i===0?'#57e3b0':'#3fae8a'; ctx.fillRect(s.x*cell, s.y*cell, cell-2, cell-2); });
+  }
+  function tick(){
+    if(over) return;
+    dir = nextDir;
+    const head = {x: snake[0].x+dir.x, y: snake[0].y+dir.y};
+    if(head.x<0||head.y<0||head.x>=cols||head.y>=rows||snake.some(s=>s.x===head.x&&s.y===head.y)){ over=true; draw(); return; }
+    snake.unshift(head);
+    if(head.x===food.x && head.y===food.y) food = randCell(); else snake.pop();
+    draw();
+  }
+  document.addEventListener('keydown', (e)=>{
+    const map = {ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0}};
+    if(map[e.key] && document.getElementById('gameOverlay').classList.contains('hidden')){
+      const m = map[e.key];
+      if(!(m.x===-dir.x && m.y===-dir.y)) nextDir = m;
+    }
+  });
+  setInterval(tick, 160);
+  draw();
+  document.getElementById('heroPlayBtn').onclick = () => openGame('snake');
+}
+
+/* ======================= search wiring ======================= */
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  searchQuery = e.target.value.trim();
+  renderGrid();
+});
+document.getElementById('heroPlayBtn').onclick = () => openSubmitForm();
+
+/* ======================= init ======================= */
+renderAuthArea();
+renderPills();
+loadCommunityGames().then(renderGrid);
+
+})();
+</script>
+</body>
+</html>
