@@ -454,11 +454,12 @@ async function handleAuthSubmit(mode){
     currentUser = existing;
   }
   currentUser.isAdmin = !!(currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL);
+  await sSet('rumpus:session', currentUser.username);
   document.getElementById('authOverlay').classList.add('hidden');
   renderAuthArea();
   renderGrid();
 }
-function logout(){ currentUser = null; renderAuthArea(); renderGrid(); }
+async function logout(){ currentUser = null; await sDelete('rumpus:session'); renderAuthArea(); renderGrid(); }
 
 async function openAdminPanel(){
   document.getElementById('authOverlay').classList.remove('hidden');
@@ -1613,9 +1614,27 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
 document.getElementById('heroPlayBtn').onclick = () => openSubmitForm();
 
 /* ======================= init ======================= */
-renderAuthArea();
-renderPills();
-loadCommunityGames().then(renderGrid);
+async function restoreSession(){
+  try{
+    const username = await sGet('rumpus:session');
+    if(!username) return;
+    const record = await sGet('rumpus:user:' + username.toLowerCase());
+    if(record){
+      currentUser = record;
+      currentUser.isAdmin = !!(currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL);
+    } else {
+      await sDelete('rumpus:session'); // stale session, account no longer exists
+    }
+  }catch(e){ /* ignore — just stay logged out */ }
+}
+
+(async () => {
+  await restoreSession();
+  renderAuthArea();
+  renderPills();
+  await loadCommunityGames();
+  renderGrid();
+})();
 
 })();
 </script>
