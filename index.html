@@ -83,8 +83,9 @@
   .avatar-pill{
     display:flex; align-items:center; gap:8px; padding:6px 14px 6px 6px;
     border-radius: 999px; background: var(--surface); border:1px solid var(--line);
-    font-size: 13px; font-weight:600;
+    font-size: 13px; font-weight:600; cursor:pointer; transition: border-color .12s ease;
   }
+  .avatar-pill:hover{ border-color: var(--text-dim); }
   .avatar-dot{
     width: 26px; height:26px; border-radius:50%;
     background: linear-gradient(135deg, var(--mint), var(--sky));
@@ -393,7 +394,7 @@ function renderAuthArea(){
   const el = document.getElementById('authArea');
   if(currentUser){
     el.innerHTML = `
-      <div class="avatar-pill" id="profilePill" title="View profile">
+      <div class="avatar-pill" id="profilePill" title="View profile &amp; settings">
         ${avatarHtml(currentUser)} ${escapeHtml(currentUser.username)}
       </div>
       ${currentUser.isAdmin ? '<button class="btn ghost" id="adminBtn" style="border-color:var(--yellow); color:var(--yellow);">Admin</button>' : ''}
@@ -798,7 +799,7 @@ async function renderProfileBody(){
 
   body.innerHTML = `
     <h2>${escapeHtml(currentUser.username)}</h2>
-    <p class="sub">Your saved progress across Rumpus.</p>
+    <p class="sub">Profile &amp; settings — your saved progress, avatar, and account details.</p>
 
     <h3 style="font-size:14px; margin:14px 0 6px;">Avatar</h3>
     <div id="avatarPicker" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;"></div>
