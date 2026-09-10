@@ -379,14 +379,22 @@ let activeCategory = 'All';
 let searchQuery = '';
 let communityGames = [];  // approved submissions, loaded async
 
+const AVATAR_EMOJIS = ['🐸','🦊','🐼','🐙','🦄','🐲','🤖','👾','🐧','🦁'];
+const AVATAR_COLORS = ['#57e3b0','#f2c14e','#a680f2','#63b3f2','#ef6f9e','#f2884e'];
+function avatarHtml(user){
+  if(user.avatar){
+    return `<div class="avatar-dot" style="background:${user.avatar.color};">${user.avatar.emoji}</div>`;
+  }
+  return `<div class="avatar-dot">${user.username.slice(0,1).toUpperCase()}</div>`;
+}
+
 /* ======================= render: auth area ======================= */
 function renderAuthArea(){
   const el = document.getElementById('authArea');
   if(currentUser){
-    const initial = currentUser.username.slice(0,1).toUpperCase();
     el.innerHTML = `
       <div class="avatar-pill" id="profilePill" title="View profile">
-        <div class="avatar-dot">${initial}</div> ${escapeHtml(currentUser.username)}
+        ${avatarHtml(currentUser)} ${escapeHtml(currentUser.username)}
       </div>
       ${currentUser.isAdmin ? '<button class="btn ghost" id="adminBtn" style="border-color:var(--yellow); color:var(--yellow);">Admin</button>' : ''}
       <button class="btn ghost" id="logoutBtn">Log out</button>
@@ -407,30 +415,123 @@ function renderAuthArea(){
 function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ======================= auth flows ======================= */
+const SECURITY_QUESTIONS = [
+  'What was your first pet\'s name?',
+  'What city were you born in?',
+  'What is your favorite game genre?',
+  'What was your childhood nickname?'
+];
+
 function openAuth(mode){
   document.getElementById('authOverlay').classList.remove('hidden');
   renderAuthForm(mode);
 }
+
+function passwordStrengthLabel(pw){
+  if(!pw) return { text:'', color:'var(--text-dim)' };
+  if(pw.length < 6) return { text:'Too short — needs 6+ characters', color:'var(--pink)' };
+  if(pw.length < 9) return { text:'Okay strength', color:'var(--yellow)' };
+  return { text:'Strong', color:'var(--mint)' };
+}
+
 function renderAuthForm(mode){
   const body = document.getElementById('authModalBody');
   const isLogin = mode === 'login';
+  const isSignup = mode === 'signup';
   body.innerHTML = `
     <h2>${isLogin ? 'Welcome back' : 'Create your account'}</h2>
-    <p class="sub">${isLogin ? 'Log in to see your saved scores.' : 'Scores &amp; progress are stored in this app\'s shared demo storage — visible to anyone using this app, not private.'}</p>
+    <p class="sub">${isLogin ? 'Log in to see your saved scores.' : 'Scores &amp; progress are stored in this app\'s local storage — tied to this browser, not private across devices.'}</p>
     <div class="field"><label>Username</label><input id="authUser" type="text" autocomplete="username" /></div>
-    ${isLogin ? '' : '<div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email" /></div>'}
-    <div class="field"><label>Password</label><input id="authPass" type="password" autocomplete="${isLogin?'current-password':'new-password'}" /></div>
+    ${isSignup ? '<div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email" /></div>' : ''}
+    <div class="field">
+      <label>Password</label>
+      <input id="authPass" type="password" autocomplete="${isLogin?'current-password':'new-password'}" />
+      ${isSignup ? '<div id="pwStrength" style="font-size:11px; margin-top:5px;"></div>' : ''}
+    </div>
+    ${isSignup ? '<div class="field"><label>Confirm password</label><input id="authPassConfirm" type="password" autocomplete="new-password" /></div>' : ''}
+    ${isSignup ? `
+    <div class="field"><label>Security question (for password resets)</label>
+      <select id="authSecQ" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:14px; font-family:inherit;">
+        ${SECURITY_QUESTIONS.map(q => `<option value="${escapeHtml(q)}">${escapeHtml(q)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Answer</label><input id="authSecA" type="text" /></div>
+    ` : ''}
     <div class="form-msg" id="authMsg"></div>
     <button class="btn primary" style="width:100%" id="authSubmit">${isLogin ? 'Log in' : 'Sign up'}</button>
     <div class="switch-line">
       ${isLogin ? "New here? " : "Already have an account? "}
       <button id="authSwitch">${isLogin ? 'Sign up' : 'Log in'}</button>
     </div>
+    ${isLogin ? '<div class="switch-line"><button id="forgotPassBtn">Forgot password?</button></div>' : ''}
   `;
   document.getElementById('authSwitch').onclick = () => renderAuthForm(isLogin ? 'signup' : 'login');
   document.getElementById('authSubmit').onclick = () => handleAuthSubmit(mode);
   document.getElementById('authPass').addEventListener('keydown', e => { if(e.key==='Enter') handleAuthSubmit(mode); });
+  if(isSignup){
+    document.getElementById('authPass').addEventListener('input', (e) => {
+      const s = passwordStrengthLabel(e.target.value);
+      const el = document.getElementById('pwStrength');
+      el.textContent = s.text;
+      el.style.color = s.color;
+    });
+  }
+  if(isLogin){
+    document.getElementById('forgotPassBtn').onclick = () => renderForgotStep1();
+  }
 }
+
+function renderForgotStep1(){
+  const body = document.getElementById('authModalBody');
+  body.innerHTML = `
+    <h2>Reset your password</h2>
+    <p class="sub">Enter your username to answer your security question.</p>
+    <div class="field"><label>Username</label><input id="fpUser" type="text" /></div>
+    <div class="form-msg" id="fpMsg"></div>
+    <button class="btn primary" style="width:100%" id="fpContinue">Continue</button>
+    <div class="switch-line"><button id="fpBack">Back to log in</button></div>
+  `;
+  document.getElementById('fpBack').onclick = () => renderAuthForm('login');
+  document.getElementById('fpContinue').onclick = async () => {
+    const username = document.getElementById('fpUser').value.trim();
+    const msg = document.getElementById('fpMsg');
+    if(!username){ msg.textContent = 'Enter a username.'; return; }
+    const record = await sGet('rumpus:user:' + username.toLowerCase());
+    if(!record){ msg.textContent = 'No account with that username.'; return; }
+    if(!record.securityQuestion){ msg.textContent = 'This account has no security question on file (created before this feature existed) — sorry, it can\'t be reset this way.'; return; }
+    renderForgotStep2(record);
+  };
+}
+
+function renderForgotStep2(record){
+  const body = document.getElementById('authModalBody');
+  body.innerHTML = `
+    <h2>Reset your password</h2>
+    <p class="sub">${escapeHtml(record.securityQuestion)}</p>
+    <div class="field"><label>Answer</label><input id="fpAnswer" type="text" /></div>
+    <div class="field"><label>New password</label><input id="fpNewPass" type="password" /></div>
+    <div class="field"><label>Confirm new password</label><input id="fpNewPassConfirm" type="password" /></div>
+    <div class="form-msg" id="fpMsg2"></div>
+    <button class="btn primary" style="width:100%" id="fpSubmit">Reset password</button>
+    <div class="switch-line"><button id="fpBack2">Back to log in</button></div>
+  `;
+  document.getElementById('fpBack2').onclick = () => renderAuthForm('login');
+  document.getElementById('fpSubmit').onclick = async () => {
+    const answer = document.getElementById('fpAnswer').value.trim().toLowerCase();
+    const newPass = document.getElementById('fpNewPass').value;
+    const confirmPass = document.getElementById('fpNewPassConfirm').value;
+    const msg = document.getElementById('fpMsg2');
+    if(answer !== (record.securityAnswer||'')){ msg.textContent = 'That answer doesn\'t match.'; return; }
+    if(newPass.length < 6){ msg.textContent = 'New password needs at least 6 characters.'; return; }
+    if(newPass !== confirmPass){ msg.textContent = 'Passwords don\'t match.'; return; }
+    record.password = newPass;
+    await sSet('rumpus:user:' + record.username.toLowerCase(), record);
+    renderAuthForm('login');
+    document.getElementById('authMsg').textContent = 'Password reset — log in with your new password.';
+    document.getElementById('authMsg').style.color = 'var(--mint)';
+  };
+}
+
 async function handleAuthSubmit(mode){
   const username = document.getElementById('authUser').value.trim();
   const pass = document.getElementById('authPass').value;
@@ -443,9 +544,18 @@ async function handleAuthSubmit(mode){
 
   if(mode === 'signup'){
     const email = document.getElementById('authEmail').value.trim();
+    const passConfirm = document.getElementById('authPassConfirm').value;
+    const secQ = document.getElementById('authSecQ').value;
+    const secA = document.getElementById('authSecA').value.trim();
     if(!email || !/^\S+@\S+\.\S+$/.test(email)){ msg.textContent = 'Enter a valid email.'; return; }
+    if(pass.length < 6){ msg.textContent = 'Password needs at least 6 characters.'; return; }
+    if(pass !== passConfirm){ msg.textContent = 'Passwords don\'t match.'; return; }
+    if(!secA){ msg.textContent = 'Please answer your security question (used for password resets).'; return; }
     if(existing){ msg.textContent = 'That username is taken. Try logging in instead.'; return; }
-    const record = { username, password: pass, email: email.toLowerCase(), joined: Date.now(), scores: {} };
+    const record = {
+      username, password: pass, email: email.toLowerCase(), joined: Date.now(), scores: {},
+      securityQuestion: secQ, securityAnswer: secA.toLowerCase()
+    };
     await sSet(key, record);
     currentUser = record;
   } else {
@@ -580,7 +690,7 @@ async function refreshAdminSubs(){
     return `
       <div style="border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:8px; display:flex; gap:10px;">
         <div style="width:48px; height:48px; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--surface); display:flex; align-items:center; justify-content:center;">
-          ${s.thumbnail ? `<img src="${s.thumbnail}" style="width:100%;height:100%;object-fit:cover;">` : '🎮'}
+          ${s.thumbnail ? (s.thumbnail.startsWith('data:video') ? `<video src="${s.thumbnail}" style="width:100%;height:100%;object-fit:cover;" muted loop autoplay playsinline></video>` : `<img src="${s.thumbnail}" style="width:100%;height:100%;object-fit:cover;">`) : '🎮'}
         </div>
         <div style="flex:1; min-width:0;">
           <div style="font-weight:700; font-size:13px;">${escapeHtml(s.title)} <span style="color:var(--yellow); font-weight:600;">· ${escapeHtml(s.category || 'Community')}</span></div>
@@ -660,22 +770,92 @@ async function refreshAdminList(){
   });
 }
 
-function openProfile(){
+async function openProfile(){
   document.getElementById('authOverlay').classList.remove('hidden');
+  await renderProfileBody();
+}
+
+async function renderProfileBody(){
   const body = document.getElementById('authModalBody');
   const scores = currentUser.scores || {};
-  const rows = GAMES.filter(g => g.playable).map(g => {
+
+  const scoreRows = GAMES.filter(g => g.playable).map(g => {
     const v = scores[g.id];
-    const display = formatScore(g.id, v);
-    return `<div class="lb-row"><span>${g.icon} ${g.name}</span><span>${display}</span></div>`;
+    return `<div class="lb-row"><span>${g.icon} ${g.name}</span><span>${formatScore(g.id, v)}</span></div>`;
   }).join('');
+
+  // Build "history" from anything scored or recently played.
+  const allGames = [...GAMES, ...communityGames];
+  const recents = await getRecentlyPlayed();
+  const historyIds = Array.from(new Set([...Object.keys(scores), ...recents.map(r => r.id)]));
+  const historyGames = historyIds.map(id => allGames.find(g => g.id === id)).filter(Boolean);
+  const historyRows = await Promise.all(historyGames.map(async g => {
+    const stats = (await sGet('rumpus:stats:' + g.id)) || {};
+    const voteIcon = stats.myVote === 'like' ? '👍' : (stats.myVote === 'dislike' ? '👎' : '—');
+    const rating = stats.myRating ? '★'.repeat(stats.myRating) : '—';
+    return `<div class="lb-row"><span>${g.icon} ${escapeHtml(g.name)}</span><span>${stats.plays||0} plays · ${voteIcon} · ${rating}</span></div>`;
+  }));
+
   body.innerHTML = `
     <h2>${escapeHtml(currentUser.username)}</h2>
     <p class="sub">Your saved progress across Rumpus.</p>
-    <div class="leaderboard">${rows}</div>
-    <button class="btn ghost" style="width:100%; margin-top:18px;" id="closeProfile">Close</button>
+
+    <h3 style="font-size:14px; margin:14px 0 6px;">Avatar</h3>
+    <div id="avatarPicker" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;"></div>
+
+    <h3 style="font-size:14px; margin:14px 0 6px;">Scores</h3>
+    <div class="leaderboard">${scoreRows || '<p class="sub">No scores yet.</p>'}</div>
+
+    <h3 style="font-size:14px; margin:14px 0 6px;">History</h3>
+    <div class="leaderboard">${historyRows.join('') || '<p class="sub">Nothing played yet.</p>'}</div>
+
+    <h3 style="font-size:14px; margin:14px 0 6px;">Edit account</h3>
+    <div class="field"><label>Email</label><input id="editEmail" type="email" value="${escapeHtml(currentUser.email||'')}" /></div>
+    <div class="field"><label>Current password</label><input id="editCurPass" type="password" /></div>
+    <div class="field"><label>New password (leave blank to keep current)</label><input id="editNewPass" type="password" /></div>
+    <div class="form-msg" id="editMsg"></div>
+    <button class="btn primary" style="width:100%; margin-bottom:10px;" id="editSave">Save changes</button>
+
+    <button class="btn ghost" style="width:100%;" id="closeProfile">Close</button>
   `;
+
+  // Avatar picker
+  const picker = document.getElementById('avatarPicker');
+  AVATAR_EMOJIS.forEach((emoji, i) => {
+    const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    const isCurrent = currentUser.avatar && currentUser.avatar.emoji === emoji && currentUser.avatar.color === color;
+    const btn = document.createElement('button');
+    btn.textContent = emoji;
+    btn.style.cssText = `width:36px; height:36px; border-radius:50%; border:2px solid ${isCurrent ? 'var(--yellow)' : 'transparent'}; background:${color}; font-size:16px; display:flex; align-items:center; justify-content:center;`;
+    btn.onclick = async () => {
+      currentUser.avatar = { emoji, color };
+      await sSet('rumpus:user:' + currentUser.username.toLowerCase(), currentUser);
+      renderAuthArea();
+      renderProfileBody();
+    };
+    picker.appendChild(btn);
+  });
+
   document.getElementById('closeProfile').onclick = () => document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('editSave').onclick = async () => {
+    const email = document.getElementById('editEmail').value.trim();
+    const curPass = document.getElementById('editCurPass').value;
+    const newPass = document.getElementById('editNewPass').value;
+    const msg = document.getElementById('editMsg');
+    if(!email || !/^\S+@\S+\.\S+$/.test(email)){ msg.textContent = 'Enter a valid email.'; return; }
+    if(!curPass){ msg.textContent = 'Enter your current password to save changes.'; return; }
+    if(curPass !== currentUser.password){ msg.textContent = 'Current password is incorrect.'; return; }
+    if(newPass && newPass.length < 6){ msg.textContent = 'New password needs at least 6 characters.'; return; }
+    currentUser.email = email.toLowerCase();
+    if(newPass) currentUser.password = newPass;
+    currentUser.isAdmin = !!(currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL);
+    await sSet('rumpus:user:' + currentUser.username.toLowerCase(), currentUser);
+    msg.style.color = 'var(--mint)';
+    msg.textContent = 'Saved!';
+    renderAuthArea();
+    document.getElementById('editCurPass').value = '';
+    document.getElementById('editNewPass').value = '';
+  };
 }
 function formatScore(gameId, v){
   if(v === undefined || v === null) return '—';
@@ -699,7 +879,9 @@ function renderPills(){
     btn.classList.toggle('active', viewMode==='home' && btn.dataset.cat === activeCategory);
   });
   document.querySelectorAll('.side-item[data-view]').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.view === viewMode);
+    const v = btn.dataset.view;
+    const isActive = v === 'home' ? (viewMode === 'home' && activeCategory === 'All') : (v === viewMode);
+    btn.classList.toggle('active', isActive);
   });
 }
 function setCategory(cat){
@@ -748,8 +930,10 @@ async function trackPlayed(gameId){
 }
 
 const VIEW_TITLES = { home:'All games', new:'New', popular:'Popular Games', recent:'Recently played', leaderboards:'Leaderboards', updated:'Updated' };
+let renderToken = 0;
 
 async function renderGrid(){
+  const myToken = ++renderToken;
   const grid = document.getElementById('gameGrid');
   const empty = document.getElementById('emptyState');
   const allGames = [...GAMES, ...communityGames];
@@ -768,15 +952,22 @@ async function renderGrid(){
       const stats = await sGet('rumpus:stats:' + g.id);
       return { ...g, _plays: stats ? stats.plays||0 : 0 };
     }));
+    if(myToken !== renderToken) return; // a newer render started while we were waiting — discard this one
     list = withPlays.sort((a,b) => b._plays - a._plays);
   } else if(viewMode === 'recent'){
     const recents = await getRecentlyPlayed();
+    if(myToken !== renderToken) return;
     const order = {}; recents.forEach((r,i) => order[r.id] = i);
     list = list.filter(g => order[g.id] !== undefined).sort((a,b) => order[a.id] - order[b.id]);
     emptyMsg = 'You haven\'t played anything yet — recently played games will show up here.';
   } else if(viewMode === 'updated'){
     // No edit-history tracking yet, so this currently mirrors the full library.
+    list = [...list].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  } else {
+    // Default browsing (Home, or any category): newest first instead of raw insertion order.
+    list = [...list].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
   }
+  if(myToken !== renderToken) return;
 
   document.getElementById('gridTitle').textContent = viewMode !== 'home' ? VIEW_TITLES[viewMode] : (activeCategory === 'All' ? 'All games' : activeCategory);
   document.getElementById('gridCount').textContent = `${list.length} game${list.length!==1?'s':''}`;
@@ -791,11 +982,18 @@ async function renderGrid(){
 
   grid.innerHTML = list.map(g => {
     const best = currentUser && !g.external ? formatScore(g.id, (currentUser.scores||{})[g.id]) : null;
-    const thumbInner = g.thumbnail ? `<img src="${g.thumbnail}" alt="" style="width:100%;height:100%;object-fit:cover;">` : g.icon;
+    const isVideo = g.thumbnail && g.thumbnail.startsWith('data:video');
+    const thumbInner = g.thumbnail
+      ? (isVideo
+          ? `<video src="${g.thumbnail}" style="width:100%;height:100%;object-fit:cover;" muted loop autoplay playsinline></video>`
+          : `<img src="${g.thumbnail}" alt="" style="width:100%;height:100%;object-fit:cover;">`)
+      : g.icon;
+    const isNew = g.createdAt && (Date.now() - g.createdAt) < 7*24*60*60*1000;
     const playsBadge = (viewMode==='popular' || viewMode==='leaderboards') ? `<span class="best">${(g._plays||0).toLocaleString()} plays</span>` : `<span class="best">${best ? best : ''}</span>`;
     return `
     <div class="card ${g.playable?'':'soon'}" data-id="${g.id}">
       <div class="notch"></div>
+      ${isNew ? '<div style="position:absolute; top:8px; left:8px; z-index:2; background:var(--mint); color:#0d1f1a; font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px;">NEW</div>' : ''}
       <div class="thumb" style="background:${g.color}22; overflow:hidden;">${thumbInner}</div>
       <div class="card-body">
         <h3>${escapeHtml(g.name)}</h3>
@@ -854,7 +1052,7 @@ function openSubmitForm(){
       </select>
     </div>
     <div class="field"><label>Link to play</label><input id="subLink" type="url" placeholder="https://..." /></div>
-    <div class="field"><label>Thumbnail (optional image file)</label><input id="subThumb" type="file" accept="image/*" /></div>
+    <div class="field"><label>Thumbnail (optional image, GIF, or short video)</label><input id="subThumb" type="file" accept="image/*,video/mp4,video/webm" /></div>
     <div class="field"><label>Description</label><textarea id="subDesc" rows="3" maxlength="300" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:14px; font-family:inherit; resize:vertical;"></textarea></div>
     <div class="field"><label>Your contact email</label><input id="subEmail" type="email" value="${currentUser && currentUser.email ? escapeHtml(currentUser.email) : ''}" /></div>
     <div class="form-msg" id="subMsg"></div>
@@ -919,7 +1117,7 @@ async function handleSubmitGame(){
 
   const file = fileInput.files && fileInput.files[0];
   if(file){
-    if(file.size > 900000){ msg.textContent = 'That image is a bit large — please use one under ~900KB.'; btn.disabled=false; btn.textContent='Send for review'; return; }
+    if(file.size > 3000000){ msg.textContent = 'That file is a bit large — please use something under ~3MB (smaller for images).'; btn.disabled=false; btn.textContent='Send for review'; return; }
     const reader = new FileReader();
     reader.onload = () => finish(reader.result);
     reader.onerror = () => finish(null);
@@ -935,9 +1133,23 @@ document.getElementById('submitOverlay').addEventListener('click', e => { if(e.t
 /* ======================= game toolbar: fullscreen / like / dislike / plays ======================= */
 async function renderGameToolbar(containerEl, gameId, stageEl){
   const key = 'rumpus:stats:' + gameId;
-  let stats = (await sGet(key)) || { likes:0, dislikes:0, plays:0, myVote:null };
+  let stats = (await sGet(key)) || { likes:0, dislikes:0, plays:0, myVote:null, ratingSum:0, ratingCount:0, myRating:0 };
+  stats.ratingSum = stats.ratingSum || 0;
+  stats.ratingCount = stats.ratingCount || 0;
+  stats.myRating = stats.myRating || 0;
   stats.plays = (stats.plays||0) + 1;
   await sSet(key, stats);
+
+  function starsRow(){
+    const avg = stats.ratingCount ? (stats.ratingSum / stats.ratingCount) : 0;
+    let html = '<div style="display:flex; align-items:center; gap:3px;">';
+    for(let i=1;i<=5;i++){
+      const filled = i <= stats.myRating;
+      html += `<button class="gt-star" data-star="${i}" style="background:none; border:none; font-size:16px; padding:2px; color:${filled ? 'var(--yellow)' : 'var(--text-dim)'};">★</button>`;
+    }
+    html += `</div><span style="font-size:11px; color:var(--text-dim);">${stats.ratingCount ? avg.toFixed(1) + ' (' + stats.ratingCount + ')' : 'No ratings yet'}</span>`;
+    return html;
+  }
 
   function draw(){
     containerEl.innerHTML = `
@@ -946,7 +1158,10 @@ async function renderGameToolbar(containerEl, gameId, stageEl){
         <button class="gt-btn ${stats.myVote==='dislike'?'active':''}" id="gtDislike">👎 <span>${stats.dislikes}</span></button>
         <button class="gt-btn" id="gtFullscreen">⛶ Fullscreen</button>
       </div>
-      <div class="gt-plays">${stats.plays.toLocaleString()} play${stats.plays!==1?'s':''}</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        ${starsRow()}
+        <span class="gt-plays">${stats.plays.toLocaleString()} play${stats.plays!==1?'s':''}</span>
+      </div>
     `;
     document.getElementById('gtLike').onclick = async () => {
       if(stats.myVote === 'like'){ stats.likes--; stats.myVote = null; }
@@ -962,6 +1177,15 @@ async function renderGameToolbar(containerEl, gameId, stageEl){
       const req = stageEl.requestFullscreen || stageEl.webkitRequestFullscreen || stageEl.msRequestFullscreen;
       if(req) req.call(stageEl);
     };
+    containerEl.querySelectorAll('.gt-star').forEach(btn => {
+      btn.onclick = async () => {
+        const val = parseInt(btn.dataset.star, 10);
+        if(stats.myRating){ stats.ratingSum -= stats.myRating; stats.ratingCount -= 1; }
+        if(stats.myRating === val){ stats.myRating = 0; }
+        else { stats.myRating = val; stats.ratingSum += val; stats.ratingCount += 1; }
+        await sSet(key, stats); draw();
+      };
+    });
   }
   draw();
 }
