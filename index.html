@@ -273,7 +273,7 @@
 
 <header class="top">
   <div class="top-inner">
-    <div class="wordmark">Rumpus<span>.</span><span class="tagline">browser games, no downloads</span></div>
+    <div class="wordmark">Rumpus<span>.</span><span class="tagline" id="taglineText">browser games, no downloads</span></div>
     <div class="search-wrap">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input id="searchInput" type="text" placeholder="Search games..." />
@@ -288,15 +288,15 @@
 
   <section class="hero">
     <div class="hero-copy">
-      <p class="eyebrow">WELCOME TO RUMPUS</p>
-      <h1>Browser games, no downloads.</h1>
-      <p>This library is empty right now — every game here comes from creators like you. Submit a link to your game and it'll show up for everyone the moment it's approved.</p>
+      <p class="eyebrow" id="heroEyebrowText">WELCOME TO RUMPUS</p>
+      <h1 id="heroTitleText">Browser games, no downloads.</h1>
+      <p id="heroDescText">This library is empty right now — every game here comes from creators like you. Submit a link to your game and it'll show up for everyone the moment it's approved.</p>
       <button class="btn primary" id="heroPlayBtn">Submit a game</button>
     </div>
     <div class="hero-stage">
       <div style="width:240px; height:240px; border-radius:10px; background:#0a0916; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--text-dim); font-size:13px; text-align:center; padding:20px;">
         <span style="font-size:34px;">🎮</span>
-        No games yet — be the first to add one.
+        <span id="heroEmptyText">No games yet — be the first to add one.</span>
       </div>
     </div>
   </section>
@@ -309,7 +309,7 @@
   <div class="empty hidden" id="emptyState">No games match that search. Try a different word or category.</div>
 </div>
 
-<footer>Rumpus is a demo game portal built for learning &amp; portfolio purposes. Not affiliated with any other gaming platform.</footer>
+<footer id="footerText">Rumpus is a demo game portal built for learning &amp; portfolio purposes. Not affiliated with any other gaming platform.</footer>
 
 <!-- Auth modal -->
 <div class="overlay hidden" id="authOverlay">
@@ -919,15 +919,19 @@ async function loadCommunityGames(){
   }catch(e){ communityGames = []; }
 }
 
+function recentlyPlayedKey(){
+  return currentUser ? ('rumpus:recentlyPlayed:' + currentUser.username.toLowerCase()) : 'rumpus:recentlyPlayed:guest';
+}
 async function getRecentlyPlayed(){
-  return (await sGet('rumpus:recentlyPlayed')) || [];
+  return (await sGet(recentlyPlayedKey())) || [];
 }
 async function trackPlayed(gameId){
-  let list = await getRecentlyPlayed();
+  const storeKey = recentlyPlayedKey();
+  let list = (await sGet(storeKey)) || [];
   list = list.filter(r => r.id !== gameId);
   list.unshift({ id: gameId, ts: Date.now() });
   if(list.length > 50) list = list.slice(0, 50);
-  await sSet('rumpus:recentlyPlayed', list);
+  await sSet(storeKey, list);
 }
 
 const VIEW_TITLES = { home:'All games', new:'New', popular:'Popular Games', recent:'Recently played', leaderboards:'Leaderboards', updated:'Updated' };
@@ -1865,4 +1869,3 @@ async function restoreSession(){
 </script>
 </body>
 </html>
-<!-- 67 -->
