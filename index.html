@@ -211,6 +211,35 @@
 
   footer{ text-align:center; padding: 40px 0 10px; color: var(--text-dim); font-size: 12px; }
 
+  /* ---------- full-screen profile ---------- */
+  .profile-view{ position:fixed; inset:0; z-index:90; overflow-y:auto; background: radial-gradient(1200px 800px at 15% -10%, #241f42 0%, var(--bg) 55%); }
+  .pv-inner{ max-width: 980px; margin:0 auto; padding: 24px 28px 90px; }
+  .pv-top{ display:flex; align-items:center; gap:22px; margin-top:22px; flex-wrap:wrap; }
+  .pv-id{ flex:1; min-width:200px; }
+  .pv-id h1{ margin:0 0 4px; font-size:32px; }
+  .pv-sub{ color:var(--text-dim); font-size:13px; }
+  .pv-chips{ display:flex; gap:10px; }
+  .pv-chip{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:10px 18px; text-align:center; min-width:96px; }
+  .pv-chip b{ display:block; font-size:22px; font-family:'Wix Madefor Display', sans-serif; color:var(--yellow); }
+  .pv-chip span{ font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; }
+  .pv-tabs{ display:flex; gap:6px; border-bottom:1px solid var(--line); margin:26px 0 20px; overflow-x:auto; }
+  .pv-tab{ background:none; border:none; color:var(--text-dim); padding:10px 16px; font-size:14px; font-weight:700; border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap; }
+  .pv-tab:hover{ color:var(--text); }
+  .pv-tab.active{ color:var(--text); border-bottom-color:var(--yellow); }
+  .pv-stats{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-bottom:22px; }
+  .pv-stat{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .pv-stat b{ display:block; font-size:22px; }
+  .pv-stat span{ font-size:12px; color:var(--text-dim); }
+  .pv-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border-bottom:1px solid var(--line); font-size:14px; }
+  .pv-row.me{ background: rgba(242,193,78,0.10); border-radius:10px; border-bottom-color:transparent; }
+  .pv-dim{ color:var(--text-dim); font-size:12px; }
+  .pv-rank{ width:38px; font-weight:800; color:var(--text-dim); flex-shrink:0; }
+  .pv-user{ display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+  .pv-section{ margin-bottom:26px; }
+  .pv-section h3{ font-size:16px; margin:0 0 10px; }
+  .pv-narrow{ max-width:520px; }
+  .pv-note{ font-size:12px; color:var(--text-dim); line-height:1.5; margin-top:10px; }
+
   /* ---------- hover sidebar ---------- */
   .sidebar{
     position: fixed; top:0; left:0; height:100vh; width:64px;
@@ -327,6 +356,11 @@
   </div>
 </div>
 
+<!-- Full-screen profile page -->
+<div class="profile-view hidden" id="profileView">
+  <div class="pv-inner" id="profileViewBody"></div>
+</div>
+
 <!-- Submit-a-game modal -->
 <div class="overlay hidden" id="submitOverlay">
   <div class="modal">
@@ -382,11 +416,15 @@ let communityGames = [];  // approved submissions, loaded async
 
 const AVATAR_EMOJIS = ['🐸','🦊','🐼','🐙','🦄','🐲','🤖','👾','🐧','🦁'];
 const AVATAR_COLORS = ['#57e3b0','#f2c14e','#a680f2','#63b3f2','#ef6f9e','#f2884e'];
-function avatarHtml(user){
-  if(user.avatar){
-    return `<div class="avatar-dot" style="background:${user.avatar.color};">${user.avatar.emoji}</div>`;
+function avatarHtml(user, size){
+  const dim = (size ? `width:${size}px;height:${size}px;font-size:${Math.round(size*0.45)}px;` : '') + 'flex-shrink:0;';
+  if(user.avatarImage){
+    return `<div class="avatar-dot" style="${dim}overflow:hidden;background:#000;"><img src="${user.avatarImage}" alt="" style="width:100%;height:100%;object-fit:cover;"></div>`;
   }
-  return `<div class="avatar-dot">${user.username.slice(0,1).toUpperCase()}</div>`;
+  if(user.avatar){
+    return `<div class="avatar-dot" style="${dim}background:${user.avatar.color};">${user.avatar.emoji}</div>`;
+  }
+  return `<div class="avatar-dot" style="${dim}">${escapeHtml(user.username.slice(0,1).toUpperCase())}</div>`;
 }
 
 /* ======================= render: auth area ======================= */
@@ -771,78 +809,282 @@ async function refreshAdminList(){
   });
 }
 
-async function openProfile(){
-  document.getElementById('authOverlay').classList.remove('hidden');
-  await renderProfileBody();
+/* ======================= profile: full-screen page ======================= */
+let profileTab = 'overview';
+const PROFILE_TABS = { overview:'Overview', liked:'Liked games', leaderboard:'Leaderboard', settings:'Settings' };
+
+function persistUser(){
+  if(!currentUser) return Promise.resolve(null);
+  return sSet('rumpus:user:' + currentUser.username.toLowerCase(), currentUser);
 }
 
-async function renderProfileBody(){
-  const body = document.getElementById('authModalBody');
-  const scores = currentUser.scores || {};
+// "Progress" = combined activity across every game. Rumpus can't see inside games hosted elsewhere,
+// so points come from what it CAN measure: games tried, plays, time spent, likes and ratings given.
+function computePoints(user){
+  const a = user.activity || {};
+  const plays = a.plays || {};
+  const seconds = a.seconds || {};
+  const gamesPlayed = Object.keys(plays).length;
+  const totalPlays = Object.values(plays).reduce((sum, n) => sum + n, 0);
+  const minutes = Math.floor(Object.values(seconds).reduce((sum, n) => sum + n, 0) / 60);
+  const likes = Object.values(user.votes || {}).filter(v => v === 'like').length;
+  const ratings = Object.values(user.ratings || {}).filter(n => n > 0).length;
+  const points = gamesPlayed*25 + totalPlays*10 + minutes*2 + likes*5 + ratings*5;
+  return { points, gamesPlayed, totalPlays, minutes, likes, ratings };
+}
 
-  const scoreRows = GAMES.filter(g => g.playable).map(g => {
-    const v = scores[g.id];
-    return `<div class="lb-row"><span>${g.icon} ${g.name}</span><span>${formatScore(g.id, v)}</span></div>`;
-  }).join('');
+async function loadLeaderboard(){
+  const res = await sList('rumpus:user:');
+  const keys = res ? res.keys : [];
+  let users = (await Promise.all(keys.map(k => sGet(k)))).filter(Boolean);
+  users = users.map(u => (currentUser && u.username.toLowerCase() === currentUser.username.toLowerCase()) ? currentUser : u);
+  const rows = users.map(u => ({ user:u, ...computePoints(u) }));
+  rows.sort((a, b) => b.points - a.points || a.user.username.localeCompare(b.user.username));
+  rows.forEach((r, i) => { r.rank = (i > 0 && rows[i-1].points === r.points) ? rows[i-1].rank : i + 1; });
+  return rows;
+}
 
-  // Build "history" from anything scored or recently played.
+function resizeImageToDataUrl(file, size){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function thumbHtml(g){
+  if(g.thumbnail){
+    return g.thumbnail.startsWith('data:video')
+      ? `<video src="${g.thumbnail}" style="width:100%;height:100%;object-fit:cover;" muted loop autoplay playsinline></video>`
+      : `<img src="${g.thumbnail}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
+  }
+  return g.icon;
+}
+
+async function openProfile(tab){
+  if(!currentUser) return;
+  profileTab = (typeof tab === 'string') ? tab : 'overview';
+  document.getElementById('profileView').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  await renderProfileView();
+}
+function closeProfile(){
+  document.getElementById('profileView').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && !document.getElementById('profileView').classList.contains('hidden')
+     && document.getElementById('gameOverlay').classList.contains('hidden')
+     && document.getElementById('authOverlay').classList.contains('hidden')){
+    closeProfile();
+  }
+});
+
+async function renderProfileView(){
+  if(!currentUser) return;
+  const el = document.getElementById('profileViewBody');
+  const board = await loadLeaderboard();
+  const me = board.find(r => r.user.username.toLowerCase() === currentUser.username.toLowerCase());
+  const mine = computePoints(currentUser);
+  const myRank = me ? me.rank : null;
+
+  el.innerHTML = `
+    <button class="btn ghost" id="pvBack">← Back to Rumpus</button>
+    <div class="pv-top">
+      ${avatarHtml(currentUser, 96)}
+      <div class="pv-id">
+        <h1>${escapeHtml(currentUser.username)}</h1>
+        <div class="pv-sub">${escapeHtml(currentUser.email || '')} · Joined ${new Date(currentUser.joined || Date.now()).toLocaleDateString()}</div>
+      </div>
+      <div class="pv-chips">
+        <div class="pv-chip"><b>${mine.points.toLocaleString()}</b><span>points</span></div>
+        <div class="pv-chip"><b>${myRank ? '#' + myRank : '—'}</b><span>rank</span></div>
+      </div>
+    </div>
+    <div class="pv-tabs">
+      ${Object.keys(PROFILE_TABS).map(t => `<button class="pv-tab ${t === profileTab ? 'active' : ''}" data-tab="${t}">${PROFILE_TABS[t]}</button>`).join('')}
+    </div>
+    <div id="pvContent"></div>
+  `;
+  document.getElementById('pvBack').onclick = closeProfile;
+  el.querySelectorAll('.pv-tab').forEach(btn => {
+    btn.onclick = () => { profileTab = btn.dataset.tab; renderProfileView(); };
+  });
+
+  const content = document.getElementById('pvContent');
+  if(profileTab === 'overview') await renderProfileOverview(content, mine);
+  else if(profileTab === 'liked') renderProfileLiked(content);
+  else if(profileTab === 'leaderboard') renderProfileLeaderboard(content, board, me, mine);
+  else renderProfileSettings(content);
+}
+
+async function renderProfileOverview(content, mine){
   const allGames = [...GAMES, ...communityGames];
+  const a = currentUser.activity || {};
   const recents = await getRecentlyPlayed();
-  const historyIds = Array.from(new Set([...Object.keys(scores), ...recents.map(r => r.id)]));
-  const historyGames = historyIds.map(id => allGames.find(g => g.id === id)).filter(Boolean);
-  const historyRows = await Promise.all(historyGames.map(async g => {
-    const stats = (await sGet('rumpus:stats:' + g.id)) || {};
-    const voteIcon = stats.myVote === 'like' ? '👍' : (stats.myVote === 'dislike' ? '👎' : '—');
-    const rating = stats.myRating ? '★'.repeat(stats.myRating) : '—';
-    return `<div class="lb-row"><span>${g.icon} ${escapeHtml(g.name)}</span><span>${stats.plays||0} plays · ${voteIcon} · ${rating}</span></div>`;
-  }));
+  const ids = Array.from(new Set([...Object.keys(a.plays || {}), ...recents.map(r => r.id)]));
+  const rows = ids.map(id => {
+    const g = allGames.find(x => x.id === id);
+    if(!g) return '';
+    const plays = (a.plays || {})[id] || 0;
+    const mins = Math.floor(((a.seconds || {})[id] || 0) / 60);
+    const vote = (currentUser.votes || {})[id];
+    const rating = (currentUser.ratings || {})[id];
+    return `<div class="pv-row"><span>${g.icon} ${escapeHtml(g.name)}</span><span class="pv-dim">${plays} play${plays !== 1 ? 's' : ''} · ${mins} min · ${vote === 'like' ? '👍' : (vote === 'dislike' ? '👎' : '—')} · ${rating ? '★'.repeat(rating) : '—'}</span></div>`;
+  }).filter(Boolean).join('');
 
-  body.innerHTML = `
-    <h2>${escapeHtml(currentUser.username)}</h2>
-    <p class="sub">Profile &amp; settings — your saved progress, avatar, and account details.</p>
+  content.innerHTML = `
+    <div class="pv-stats">
+      <div class="pv-stat"><b>${mine.gamesPlayed}</b><span>Games played</span></div>
+      <div class="pv-stat"><b>${mine.totalPlays}</b><span>Total plays</span></div>
+      <div class="pv-stat"><b>${mine.minutes}</b><span>Minutes played</span></div>
+      <div class="pv-stat"><b>${mine.likes}</b><span>Games liked</span></div>
+    </div>
+    <div class="pv-section">
+      <h3>Your games</h3>
+      ${rows || '<p class="pv-dim">Nothing played yet — open a game and it\'ll show up here.</p>'}
+    </div>
+    <p class="pv-note">Points: 25 for each new game you try, 10 per play, 2 per minute played, 5 per like, and 5 per rating.</p>
+  `;
+}
 
-    <h3 style="font-size:14px; margin:14px 0 6px;">Avatar</h3>
-    <div id="avatarPicker" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;"></div>
+function renderProfileLiked(content){
+  const allGames = [...GAMES, ...communityGames];
+  const votes = currentUser.votes || {};
+  const liked = allGames.filter(g => votes[g.id] === 'like');
+  if(liked.length === 0){
+    content.innerHTML = '<div class="empty">You haven\'t liked any games yet — press 👍 on a game and it\'ll be saved here.</div>';
+    return;
+  }
+  content.innerHTML = `<div class="grid">${liked.map(g => `
+    <div class="card" data-id="${g.id}" style="cursor:pointer;">
+      <div class="notch"></div>
+      <div class="thumb" style="background:${g.color}22; overflow:hidden;">${thumbHtml(g)}</div>
+      <div class="card-body">
+        <h3>${escapeHtml(g.name)}</h3>
+        <div class="card-tag">${escapeHtml(g.cat)}</div>
+        <div class="card-foot"><span class="best">👍 Liked</span><span class="play-btn">${g.external ? 'Open' : 'Play'}</span></div>
+      </div>
+    </div>`).join('')}</div>`;
+  content.querySelectorAll('.card').forEach(card => {
+    const g = allGames.find(x => x.id === card.dataset.id);
+    card.onclick = () => { g.external ? openExternalGame(g) : openGame(g.id); };
+  });
+}
 
-    <h3 style="font-size:14px; margin:14px 0 6px;">Scores</h3>
-    <div class="leaderboard">${scoreRows || '<p class="sub">No scores yet.</p>'}</div>
+function renderProfileLeaderboard(content, board, me, mine){
+  const TOP = 25;
+  const rowHtml = (r) => {
+    const isMe = currentUser && r.user.username.toLowerCase() === currentUser.username.toLowerCase();
+    return `<div class="pv-row ${isMe ? 'me' : ''}">
+      <span class="pv-rank">${r.rank <= 3 ? ['🥇','🥈','🥉'][r.rank - 1] : '#' + r.rank}</span>
+      <span class="pv-user">${avatarHtml(r.user, 30)}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHtml(r.user.username)}${isMe ? ' (you)' : ''}</span></span>
+      <span class="pv-dim">${r.gamesPlayed} game${r.gamesPlayed !== 1 ? 's' : ''} · ${r.minutes} min</span>
+      <b style="min-width:70px; text-align:right;">${r.points.toLocaleString()} pts</b>
+    </div>`;
+  };
+  const top = board.slice(0, TOP);
+  const meInTop = me && me.rank <= TOP && top.includes(me);
+  content.innerHTML = `
+    <div class="pv-section">
+      <h3>${me ? `You're #${me.rank} of ${board.length}` : 'Leaderboard'} · ${mine.points.toLocaleString()} points</h3>
+      ${top.map(rowHtml).join('')}
+      ${(me && !meInTop) ? `<div class="pv-dim" style="text-align:center; padding:8px;">···</div>${rowHtml(me)}` : ''}
+    </div>
+    <p class="pv-note">Your place is based on your combined progress across every game you've played: 25 points per new game, 10 per play, 2 per minute played, 5 per like and 5 per rating. Rankings only include accounts created on this browser, since Rumpus doesn't have a shared server yet.</p>
+  `;
+}
 
-    <h3 style="font-size:14px; margin:14px 0 6px;">History</h3>
-    <div class="leaderboard">${historyRows.join('') || '<p class="sub">Nothing played yet.</p>'}</div>
+function renderProfileSettings(content){
+  content.innerHTML = `
+    <div class="pv-narrow">
+      <div class="pv-section">
+        <h3>Profile picture</h3>
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
+          ${avatarHtml(currentUser, 72)}
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <label class="btn" style="cursor:pointer;">Upload photo<input type="file" id="pfpInput" accept="image/*" style="display:none;"></label>
+            ${currentUser.avatarImage ? '<button class="btn ghost" id="pfpRemove">Remove photo</button>' : ''}
+          </div>
+        </div>
+        <div class="form-msg" id="pfpMsg"></div>
+        <div class="pv-dim" style="margin-bottom:8px;">Or pick an avatar:</div>
+        <div id="avatarPicker" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      </div>
 
-    <h3 style="font-size:14px; margin:14px 0 6px;">Edit account</h3>
-    <div class="field"><label>Email</label><input id="editEmail" type="email" value="${escapeHtml(currentUser.email||'')}" /></div>
-    <div class="field"><label>Current password</label><input id="editCurPass" type="password" /></div>
-    <div class="field"><label>New password (leave blank to keep current)</label><input id="editNewPass" type="password" /></div>
-    <div class="form-msg" id="editMsg"></div>
-    <button class="btn primary" style="width:100%; margin-bottom:10px;" id="editSave">Save changes</button>
+      <div class="pv-section">
+        <h3>Account</h3>
+        <div class="field"><label>Email</label><input id="editEmail" type="email" value="${escapeHtml(currentUser.email || '')}" /></div>
+        <div class="field"><label>Current password</label><input id="editCurPass" type="password" /></div>
+        <div class="field"><label>New password (leave blank to keep current)</label><input id="editNewPass" type="password" /></div>
+        <div class="form-msg" id="editMsg"></div>
+        <button class="btn primary" id="editSave">Save changes</button>
+      </div>
 
-    <button class="btn ghost" style="width:100%;" id="closeProfile">Close</button>
+      <div class="pv-section">
+        <button class="btn ghost" id="pvLogout" style="color:var(--pink); border-color:var(--pink);">Log out</button>
+      </div>
+    </div>
   `;
 
-  // Avatar picker
+  document.getElementById('pfpInput').onchange = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    const msg = document.getElementById('pfpMsg');
+    if(!file) return;
+    if(!file.type.startsWith('image/')){ msg.textContent = 'Please choose an image file.'; return; }
+    if(file.size > 8 * 1024 * 1024){ msg.textContent = 'That image is too big — please use one under 8MB.'; return; }
+    try{
+      currentUser.avatarImage = await resizeImageToDataUrl(file, 256);
+      await persistUser();
+      renderAuthArea();
+      renderProfileView();
+    }catch(err){ msg.textContent = 'Couldn\'t read that image — try a different file.'; }
+  };
+  const rm = document.getElementById('pfpRemove');
+  if(rm) rm.onclick = async () => {
+    delete currentUser.avatarImage;
+    await persistUser();
+    renderAuthArea();
+    renderProfileView();
+  };
+
   const picker = document.getElementById('avatarPicker');
   AVATAR_EMOJIS.forEach((emoji, i) => {
     const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
-    const isCurrent = currentUser.avatar && currentUser.avatar.emoji === emoji && currentUser.avatar.color === color;
+    const isCurrent = !currentUser.avatarImage && currentUser.avatar && currentUser.avatar.emoji === emoji && currentUser.avatar.color === color;
     const btn = document.createElement('button');
     btn.textContent = emoji;
-    btn.style.cssText = `width:36px; height:36px; border-radius:50%; border:2px solid ${isCurrent ? 'var(--yellow)' : 'transparent'}; background:${color}; font-size:16px; display:flex; align-items:center; justify-content:center;`;
+    btn.style.cssText = `width:38px; height:38px; border-radius:50%; border:2px solid ${isCurrent ? 'var(--yellow)' : 'transparent'}; background:${color}; font-size:17px; display:flex; align-items:center; justify-content:center;`;
     btn.onclick = async () => {
       currentUser.avatar = { emoji, color };
-      await sSet('rumpus:user:' + currentUser.username.toLowerCase(), currentUser);
+      delete currentUser.avatarImage;
+      await persistUser();
       renderAuthArea();
-      renderProfileBody();
+      renderProfileView();
     };
     picker.appendChild(btn);
   });
 
-  document.getElementById('closeProfile').onclick = () => document.getElementById('authOverlay').classList.add('hidden');
   document.getElementById('editSave').onclick = async () => {
     const email = document.getElementById('editEmail').value.trim();
     const curPass = document.getElementById('editCurPass').value;
     const newPass = document.getElementById('editNewPass').value;
     const msg = document.getElementById('editMsg');
+    msg.style.color = '';
     if(!email || !/^\S+@\S+\.\S+$/.test(email)){ msg.textContent = 'Enter a valid email.'; return; }
     if(!curPass){ msg.textContent = 'Enter your current password to save changes.'; return; }
     if(curPass !== currentUser.password){ msg.textContent = 'Current password is incorrect.'; return; }
@@ -850,14 +1092,16 @@ async function renderProfileBody(){
     currentUser.email = email.toLowerCase();
     if(newPass) currentUser.password = newPass;
     currentUser.isAdmin = !!(currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL);
-    await sSet('rumpus:user:' + currentUser.username.toLowerCase(), currentUser);
+    await persistUser();
     msg.style.color = 'var(--mint)';
     msg.textContent = 'Saved!';
     renderAuthArea();
     document.getElementById('editCurPass').value = '';
     document.getElementById('editNewPass').value = '';
   };
+  document.getElementById('pvLogout').onclick = async () => { closeProfile(); await logout(); };
 }
+
 function formatScore(gameId, v){
   if(v === undefined || v === null) return '—';
   if(gameId === 'match') return `${v.score} pts (${v.moves} moves)`;
@@ -1138,45 +1382,60 @@ document.getElementById('submitOverlay').addEventListener('click', e => { if(e.t
 /* ======================= game toolbar: fullscreen / like / dislike / plays ======================= */
 async function renderGameToolbar(containerEl, gameId, stageEl){
   const key = 'rumpus:stats:' + gameId;
-  let stats = (await sGet(key)) || { likes:0, dislikes:0, plays:0, myVote:null, ratingSum:0, ratingCount:0, myRating:0 };
-  stats.ratingSum = stats.ratingSum || 0;
-  stats.ratingCount = stats.ratingCount || 0;
-  stats.myRating = stats.myRating || 0;
-  stats.plays = (stats.plays||0) + 1;
-  await sSet(key, stats);
+  const stats = Object.assign({ likes:0, dislikes:0, plays:0, myVote:null, ratingSum:0, ratingCount:0, myRating:0 }, (await sGet(key)) || {});
+
+  // Votes and ratings belong to the logged-in account (guests fall back to this browser).
+  if(currentUser){
+    currentUser.votes = currentUser.votes || {};
+    currentUser.ratings = currentUser.ratings || {};
+    // Adopt any older browser-level vote/rating once, so it isn't counted twice.
+    if(currentUser.votes[gameId] === undefined && stats.myVote){ currentUser.votes[gameId] = stats.myVote; stats.myVote = null; }
+    if(currentUser.ratings[gameId] === undefined && stats.myRating){ currentUser.ratings[gameId] = stats.myRating; stats.myRating = 0; }
+  }
+  const getVote = () => currentUser ? (currentUser.votes[gameId] || null) : stats.myVote;
+  const setVote = (v) => { if(currentUser){ if(v) currentUser.votes[gameId] = v; else delete currentUser.votes[gameId]; } else stats.myVote = v; };
+  const getRating = () => currentUser ? (currentUser.ratings[gameId] || 0) : stats.myRating;
+  const setRating = (n) => { if(currentUser){ if(n) currentUser.ratings[gameId] = n; else delete currentUser.ratings[gameId]; } else stats.myRating = n; };
+  const save = async () => { await sSet(key, stats); await persistUser(); };
+
+  stats.plays = (stats.plays || 0) + 1;
+  await save();
 
   function starsRow(){
     const avg = stats.ratingCount ? (stats.ratingSum / stats.ratingCount) : 0;
+    const mine = getRating();
     let html = '<div style="display:flex; align-items:center; gap:3px;">';
-    for(let i=1;i<=5;i++){
-      const filled = i <= stats.myRating;
-      html += `<button class="gt-star" data-star="${i}" style="background:none; border:none; font-size:16px; padding:2px; color:${filled ? 'var(--yellow)' : 'var(--text-dim)'};">★</button>`;
+    for(let i = 1; i <= 5; i++){
+      html += `<button class="gt-star" data-star="${i}" style="background:none; border:none; font-size:16px; padding:2px; color:${i <= mine ? 'var(--yellow)' : 'var(--text-dim)'};">★</button>`;
     }
     html += `</div><span style="font-size:11px; color:var(--text-dim);">${stats.ratingCount ? avg.toFixed(1) + ' (' + stats.ratingCount + ')' : 'No ratings yet'}</span>`;
     return html;
   }
 
   function draw(){
+    const vote = getVote();
     containerEl.innerHTML = `
       <div class="gt-left">
-        <button class="gt-btn ${stats.myVote==='like'?'active':''}" id="gtLike">👍 <span>${stats.likes}</span></button>
-        <button class="gt-btn ${stats.myVote==='dislike'?'active':''}" id="gtDislike">👎 <span>${stats.dislikes}</span></button>
+        <button class="gt-btn ${vote === 'like' ? 'active' : ''}" id="gtLike">👍 <span>${stats.likes}</span></button>
+        <button class="gt-btn ${vote === 'dislike' ? 'active' : ''}" id="gtDislike">👎 <span>${stats.dislikes}</span></button>
         <button class="gt-btn" id="gtFullscreen">⛶ Fullscreen</button>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         ${starsRow()}
-        <span class="gt-plays">${stats.plays.toLocaleString()} play${stats.plays!==1?'s':''}</span>
+        <span class="gt-plays">${stats.plays.toLocaleString()} play${stats.plays !== 1 ? 's' : ''}</span>
       </div>
     `;
     document.getElementById('gtLike').onclick = async () => {
-      if(stats.myVote === 'like'){ stats.likes--; stats.myVote = null; }
-      else { if(stats.myVote === 'dislike') stats.dislikes--; stats.likes++; stats.myVote = 'like'; }
-      await sSet(key, stats); draw();
+      const cur = getVote();
+      if(cur === 'like'){ stats.likes--; setVote(null); }
+      else { if(cur === 'dislike') stats.dislikes--; stats.likes++; setVote('like'); }
+      await save(); draw();
     };
     document.getElementById('gtDislike').onclick = async () => {
-      if(stats.myVote === 'dislike'){ stats.dislikes--; stats.myVote = null; }
-      else { if(stats.myVote === 'like') stats.likes--; stats.dislikes++; stats.myVote = 'dislike'; }
-      await sSet(key, stats); draw();
+      const cur = getVote();
+      if(cur === 'dislike'){ stats.dislikes--; setVote(null); }
+      else { if(cur === 'like') stats.likes--; stats.dislikes++; setVote('dislike'); }
+      await save(); draw();
     };
     document.getElementById('gtFullscreen').onclick = () => {
       const req = stageEl.requestFullscreen || stageEl.webkitRequestFullscreen || stageEl.msRequestFullscreen;
@@ -1185,19 +1444,57 @@ async function renderGameToolbar(containerEl, gameId, stageEl){
     containerEl.querySelectorAll('.gt-star').forEach(btn => {
       btn.onclick = async () => {
         const val = parseInt(btn.dataset.star, 10);
-        if(stats.myRating){ stats.ratingSum -= stats.myRating; stats.ratingCount -= 1; }
-        if(stats.myRating === val){ stats.myRating = 0; }
-        else { stats.myRating = val; stats.ratingSum += val; stats.ratingCount += 1; }
-        await sSet(key, stats); draw();
+        const prev = getRating();
+        if(prev){ stats.ratingSum -= prev; stats.ratingCount -= 1; }
+        if(prev === val){ setRating(0); }
+        else { setRating(val); stats.ratingSum += val; stats.ratingCount += 1; }
+        await save(); draw();
       };
     });
   }
   draw();
 }
 
+// Account-level activity (feeds the leaderboard): plays per game and time spent with a game open.
+function recordAccountPlay(gameId){
+  if(!currentUser) return;
+  currentUser.activity = currentUser.activity || {};
+  currentUser.activity.plays = currentUser.activity.plays || {};
+  currentUser.activity.seconds = currentUser.activity.seconds || {};
+  currentUser.activity.plays[gameId] = (currentUser.activity.plays[gameId] || 0) + 1;
+  persistUser();
+}
+let playSession = null;
+function startPlaySession(gameId){
+  endPlaySession();
+  playSession = { id: gameId, start: Date.now() };
+}
+function endPlaySession(){
+  if(!playSession) return;
+  const id = playSession.id;
+  const secs = Math.min(Math.round((Date.now() - playSession.start) / 1000), 2 * 60 * 60);
+  playSession = null;
+  if(!currentUser || secs < 1) return;
+  currentUser.activity = currentUser.activity || {};
+  currentUser.activity.plays = currentUser.activity.plays || {};
+  currentUser.activity.seconds = currentUser.activity.seconds || {};
+  currentUser.activity.seconds[id] = (currentUser.activity.seconds[id] || 0) + secs;
+  persistUser();
+}
+window.addEventListener('beforeunload', endPlaySession);
+
+function closeGameOverlay(){
+  endPlaySession();
+  stopAllLoops();
+  document.getElementById('gameModalBody').innerHTML = ''; // unloads the embedded game so it stops playing
+  document.getElementById('gameOverlay').classList.add('hidden');
+}
+
 /* ======================= external (community) game embed ======================= */
 function openExternalGame(g){
   trackPlayed(g.id);
+  recordAccountPlay(g.id);
+  startPlaySession(g.id);
   document.getElementById('gameOverlay').classList.remove('hidden');
   const body = document.getElementById('gameModalBody');
   body.innerHTML = `
@@ -1217,6 +1514,8 @@ function openExternalGame(g){
 /* ======================= game modal shell ======================= */
 function openGame(id){
   trackPlayed(id);
+  recordAccountPlay(id);
+  startPlaySession(id);
   const g = GAMES.find(x => x.id === id);
   document.getElementById('gameOverlay').classList.remove('hidden');
   const body = document.getElementById('gameModalBody');
@@ -1234,10 +1533,13 @@ function openGame(id){
 }
 
 document.querySelectorAll('[data-close]').forEach(btn => {
-  btn.onclick = () => document.getElementById(btn.dataset.close).classList.add('hidden');
+  btn.onclick = () => {
+    if(btn.dataset.close === 'gameOverlay') closeGameOverlay();
+    else document.getElementById(btn.dataset.close).classList.add('hidden');
+  };
 });
 document.getElementById('authOverlay').addEventListener('click', e => { if(e.target.id==='authOverlay') e.currentTarget.classList.add('hidden'); });
-document.getElementById('gameOverlay').addEventListener('click', e => { if(e.target.id==='gameOverlay'){ e.currentTarget.classList.add('hidden'); stopAllLoops(); } });
+document.getElementById('gameOverlay').addEventListener('click', e => { if(e.target.id==='gameOverlay') closeGameOverlay(); });
 
 let activeLoops = [];
 function stopAllLoops(){ activeLoops.forEach(id => clearInterval(id)); activeLoops = []; document.removeEventListener('keydown', activeKeyHandler || (()=>{})); }
