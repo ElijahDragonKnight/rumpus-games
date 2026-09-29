@@ -244,27 +244,29 @@
   .sidebar{
     position: fixed; top:0; left:0; height:100vh; width:64px;
     background: var(--bg-raise); border-right: 1px solid var(--line);
-    overflow: hidden; transition: width .18s ease;
-    z-index: 60; display:flex; flex-direction:column; padding: 14px 0;
+    overflow-x: hidden; overflow-y: auto; transition: width .18s ease;
+    z-index: 60; display:flex; flex-direction:column; padding: 5px 0;
+    scrollbar-width: none;
   }
-  .sidebar:hover{ width: 224px; box-shadow: 8px 0 24px rgba(0,0,0,0.35); }
+  .sidebar::-webkit-scrollbar{ display:none; }
+  .sidebar:hover{ width: 210px; box-shadow: 8px 0 24px rgba(0,0,0,0.35); }
   .side-logo{
-    display:flex; align-items:center; gap:12px; padding: 4px 20px 18px; white-space:nowrap;
+    display:flex; align-items:center; gap:10px; padding: 3px 18px 5px; white-space:nowrap;
   }
-  .side-logo .dot{ width:22px; height:22px; border-radius:7px; background: var(--yellow); flex-shrink:0; }
-  .side-logo .label{ font-family:'Wix Madefor Display',sans-serif; font-weight:800; font-size:16px; opacity:0; transition: opacity .12s ease; }
+  .side-logo .dot{ width:18px; height:18px; border-radius:6px; background: var(--yellow); flex-shrink:0; }
+  .side-logo .label{ font-family:'Wix Madefor Display',sans-serif; font-weight:800; font-size:14px; opacity:0; transition: opacity .12s ease; }
   .sidebar:hover .side-logo .label{ opacity:1; }
   .side-item{
-    display:flex; align-items:center; gap:14px; padding: 10px 20px; white-space:nowrap;
-    color: var(--text-dim); font-size: 14px; font-weight:600; border: none; background:none;
-    width:100%; text-align:left; font-family:inherit;
+    display:flex; align-items:center; gap:10px; padding: 4px 18px; white-space:nowrap;
+    color: var(--text-dim); font-size: 12px; font-weight:600; border: none; background:none;
+    width:100%; text-align:left; font-family:inherit; flex-shrink:0;
   }
   .side-item:hover{ color: var(--text); background: var(--surface); }
-  .side-item.active{ color: var(--text); background: var(--surface-hi); border-left:3px solid var(--yellow); padding-left:17px; }
-  .side-item .icon{ font-size:18px; width:22px; text-align:center; flex-shrink:0; }
+  .side-item.active{ color: var(--text); background: var(--surface-hi); border-left:3px solid var(--yellow); padding-left:15px; }
+  .side-item .icon{ font-size:13px; width:17px; text-align:center; flex-shrink:0; }
   .side-item .label{ opacity:0; transition: opacity .12s ease; }
   .sidebar:hover .side-item .label{ opacity:1; }
-  .side-divider{ border:none; border-top:1px solid var(--line); margin: 10px 16px; }
+  .side-divider{ border:none; border-top:1px solid var(--line); margin: 3px 16px; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -338,7 +340,7 @@
   <div class="empty hidden" id="emptyState">No games match that search. Try a different word or category.</div>
 </div>
 
-<footer id="footerText">Rumpus is a demo game portal built for learning &amp; portfolio purposes. Not affiliated with any other gaming platform.</footer>
+<footer id="footerText">Rumpus is an original game and not affiliated with any other gaming platform.</footer>
 
 <!-- Auth modal -->
 <div class="overlay hidden" id="authOverlay">
@@ -378,6 +380,212 @@ const CATEGORIES = ['All','Action','Adventure','Arcade','Board','Card','Clicker'
 const GENRE_OPTIONS = ['Action','Adventure','Arcade','Board','Card','Clicker','Driving','.io','Puzzle','Shooting','Simulation','Sports','Strategy','Trivia','Word','Education','Multiplayer','Community'];
 let viewMode = 'home'; // 'home' | 'new' | 'popular' | 'recent' | 'leaderboards' | 'updated'
 const ADMIN_EMAIL = 'elijahdragonknight@gmail.com';
+
+/* ======================= i18n ======================= */
+// The ISO 639-1 set: the standard list of ~180 written world languages used by virtually
+// every major platform for "all languages". Each name is shown as it's written by native
+// speakers (its endonym). Only a few of these (marked by having real entries in STRINGS)
+// have translated interface text right now — the rest fall back to English until added.
+const LANGUAGES = [
+  { code:'aa', label:'Afaraf' }, { code:'ab', label:'Аҧсуа' }, { code:'af', label:'Afrikaans' },
+  { code:'ak', label:'Akan' }, { code:'sq', label:'Shqip' }, { code:'am', label:'አማርኛ' },
+  { code:'ar', label:'العربية' }, { code:'an', label:'Aragonés' }, { code:'hy', label:'Հայերեն' },
+  { code:'as', label:'অসমীয়া' }, { code:'av', label:'Авар' }, { code:'ae', label:'Avesta' },
+  { code:'ay', label:'Aymar aru' }, { code:'az', label:'Azərbaycan dili' }, { code:'bm', label:'Bamanankan' },
+  { code:'ba', label:'Башҡорт теле' }, { code:'eu', label:'Euskara' }, { code:'be', label:'Беларуская' },
+  { code:'bn', label:'বাংলা' }, { code:'bh', label:'भोजपुरी' }, { code:'bi', label:'Bislama' },
+  { code:'bs', label:'Bosanski' }, { code:'br', label:'Brezhoneg' }, { code:'bg', label:'Български' },
+  { code:'my', label:'မြန်မာဘာသာ' }, { code:'ca', label:'Català' }, { code:'ch', label:'Chamoru' },
+  { code:'ce', label:'Нохчийн' }, { code:'ny', label:'Chichewa' }, { code:'zh', label:'中文' },
+  { code:'cv', label:'Чӑваш чӗлхи' }, { code:'kw', label:'Kernewek' }, { code:'co', label:'Corsu' },
+  { code:'cr', label:'ᓀᐦᐃᔭᐍᐏᐣ' }, { code:'hr', label:'Hrvatski' }, { code:'cs', label:'Čeština' },
+  { code:'da', label:'Dansk' }, { code:'dv', label:'ދިވެހި' }, { code:'nl', label:'Nederlands' },
+  { code:'dz', label:'རྫོང་ཁ' }, { code:'en', label:'English' }, { code:'eo', label:'Esperanto' },
+  { code:'et', label:'Eesti' }, { code:'ee', label:'Eʋegbe' }, { code:'fo', label:'Føroyskt' },
+  { code:'fj', label:'Vosa Vakaviti' }, { code:'fi', label:'Suomi' }, { code:'fr', label:'Français' },
+  { code:'ff', label:'Fulfulde' }, { code:'gl', label:'Galego' }, { code:'ka', label:'ქართული' },
+  { code:'de', label:'Deutsch' }, { code:'el', label:'Ελληνικά' }, { code:'gn', label:"Avañe'ẽ" },
+  { code:'gu', label:'ગુજરાતી' }, { code:'ht', label:'Kreyòl ayisyen' }, { code:'ha', label:'Hausa' },
+  { code:'he', label:'עברית' }, { code:'hz', label:'Otjiherero' }, { code:'hi', label:'हिन्दी' },
+  { code:'ho', label:'Hiri Motu' }, { code:'hu', label:'Magyar' }, { code:'ia', label:'Interlingua' },
+  { code:'id', label:'Bahasa Indonesia' }, { code:'ie', label:'Interlingue' }, { code:'ga', label:'Gaeilge' },
+  { code:'ig', label:'Asụsụ Igbo' }, { code:'ik', label:'Iñupiaq' }, { code:'io', label:'Ido' },
+  { code:'is', label:'Íslenska' }, { code:'it', label:'Italiano' }, { code:'iu', label:'ᐃᓄᒃᑎᑐᑦ' },
+  { code:'ja', label:'日本語' }, { code:'jv', label:'Basa Jawa' }, { code:'kl', label:'Kalaallisut' },
+  { code:'kn', label:'ಕನ್ನಡ' }, { code:'kr', label:'Kanuri' }, { code:'ks', label:'कश्मीरी' },
+  { code:'kk', label:'Қазақ тілі' }, { code:'km', label:'ខ្មែរ' }, { code:'ki', label:'Gĩkũyũ' },
+  { code:'rw', label:'Ikinyarwanda' }, { code:'ky', label:'Кыргызча' }, { code:'kv', label:'Коми кыв' },
+  { code:'kg', label:'Kikongo' }, { code:'ko', label:'한국어' }, { code:'ku', label:'Kurdî' },
+  { code:'kj', label:'Kwanyama' }, { code:'la', label:'Latina' }, { code:'lb', label:'Lëtzebuergesch' },
+  { code:'lg', label:'Luganda' }, { code:'li', label:'Limburgs' }, { code:'ln', label:'Lingála' },
+  { code:'lo', label:'ພາສາລາວ' }, { code:'lt', label:'Lietuvių kalba' }, { code:'lu', label:'Kiluba' },
+  { code:'lv', label:'Latviešu valoda' }, { code:'gv', label:'Gaelg' }, { code:'mk', label:'Македонски' },
+  { code:'mg', label:'Malagasy' }, { code:'ms', label:'Bahasa Melayu' }, { code:'ml', label:'മലയാളം' },
+  { code:'mt', label:'Malti' }, { code:'mi', label:'Te Reo Māori' }, { code:'mr', label:'मराठी' },
+  { code:'mh', label:'Kajin M̧ajeļ' }, { code:'mn', label:'Монгол хэл' }, { code:'na', label:'Dorerin Naoero' },
+  { code:'nv', label:'Diné bizaad' }, { code:'nd', label:'IsiNdebele' }, { code:'ne', label:'नेपाली' },
+  { code:'ng', label:'Owambo' }, { code:'nb', label:'Norsk Bokmål' }, { code:'nn', label:'Norsk Nynorsk' },
+  { code:'no', label:'Norsk' }, { code:'ii', label:'ꆈꌠ꒿ Nuosuhxop' }, { code:'nr', label:'IsiNdebele' },
+  { code:'oc', label:'Occitan' }, { code:'oj', label:'ᐊᓂᔑᓈᐯᒧᐎᓐ' }, { code:'cu', label:'Ѩзыкъ словѣньскъ' },
+  { code:'om', label:'Afaan Oromoo' }, { code:'or', label:'ଓଡ଼ିଆ' }, { code:'os', label:'Ирон æвзаг' },
+  { code:'pa', label:'ਪੰਜਾਬੀ' }, { code:'pi', label:'पाऴि' }, { code:'fa', label:'فارسی' },
+  { code:'pl', label:'Polski' }, { code:'ps', label:'پښتو' }, { code:'pt', label:'Português' },
+  { code:'qu', label:'Runa Simi' }, { code:'rm', label:'Rumantsch' }, { code:'rn', label:'Ikirundi' },
+  { code:'ro', label:'Română' }, { code:'ru', label:'Русский' }, { code:'sa', label:'संस्कृतम्' },
+  { code:'sc', label:'Sardu' }, { code:'sd', label:'سنڌي' }, { code:'se', label:'Davvisámegiella' },
+  { code:'sm', label:'Gagana Sāmoa' }, { code:'sg', label:'Sängö' }, { code:'sr', label:'Српски' },
+  { code:'gd', label:'Gàidhlig' }, { code:'sn', label:'ChiShona' }, { code:'si', label:'සිංහල' },
+  { code:'sk', label:'Slovenčina' }, { code:'sl', label:'Slovenščina' }, { code:'so', label:'Soomaaliga' },
+  { code:'st', label:'Sesotho' }, { code:'es', label:'Español' }, { code:'su', label:'Basa Sunda' },
+  { code:'sw', label:'Kiswahili' }, { code:'ss', label:'SiSwati' }, { code:'sv', label:'Svenska' },
+  { code:'ta', label:'தமிழ்' }, { code:'te', label:'తెలుగు' }, { code:'tg', label:'Тоҷикӣ' },
+  { code:'th', label:'ไทย' }, { code:'ti', label:'ትግርኛ' }, { code:'bo', label:'བོད་ཡིག' },
+  { code:'tk', label:'Türkmençe' }, { code:'tl', label:'Tagalog' }, { code:'tn', label:'Setswana' },
+  { code:'to', label:'Faka-Tonga' }, { code:'tr', label:'Türkçe' }, { code:'ts', label:'Xitsonga' },
+  { code:'tt', label:'Татар теле' }, { code:'tw', label:'Twi' }, { code:'ty', label:'Reo Tahiti' },
+  { code:'ug', label:'ئۇيغۇرچە' }, { code:'uk', label:'Українська' }, { code:'ur', label:'اردو' },
+  { code:'uz', label:"O'zbek" }, { code:'ve', label:'Tshivenḓa' }, { code:'vi', label:'Tiếng Việt' },
+  { code:'vo', label:'Volapük' }, { code:'wa', label:'Walon' }, { code:'cy', label:'Cymraeg' },
+  { code:'wo', label:'Wolof' }, { code:'fy', label:'Frysk' }, { code:'xh', label:'IsiXhosa' },
+  { code:'yi', label:'ייִדיש' }, { code:'yo', label:'Yorùbá' }, { code:'za', label:'Vahcuengh' },
+  { code:'zu', label:'IsiZulu' }
+].filter((l, i, arr) => arr.findIndex(x => x.code === l.code) === i)
+ .sort((a, b) => a.label.localeCompare(b.label));
+const STRINGS = {
+  en: {
+    tagline:'browser games, no downloads', searchPlaceholder:'Search games...',
+    login:'Log in', signup:'Sign up', logout:'Log out', admin:'Admin', submitGame:'Submit a game',
+    heroEyebrow:'WELCOME TO RUMPUS', heroTitle:'Browser games, no downloads.',
+    heroDesc:"This library is empty right now — every game here comes from creators like you. Submit a link to your game and it'll show up for everyone the moment it's approved.",
+    heroEmpty:'No games yet — be the first to add one.',
+    footer:'Rumpus is an original game and not affiliated with any other gaming platform.',
+    emptyDefault:'No games match that search. Try a different word or category.',
+    emptyRecent:"You haven't played anything yet — recently played games will show up here.",
+    allGames:'All games', language:'Language',
+    navHome:'Home', navRecent:'Recently played', navNew:'New', navPopular:'Popular Games',
+    navUpdated:'Updated', navLeaderboards:'Leaderboards',
+    catAction:'Action', catAdventure:'Adventure', catArcade:'Arcade', catBoard:'Board', catCard:'Card',
+    catClicker:'Clicker', catDriving:'Driving', catIo:'.io', catPuzzle:'Puzzle', catShooting:'Shooting',
+    catSimulation:'Simulation', catSports:'Sports', catStrategy:'Strategy', catTrivia:'Trivia', catWord:'Word',
+    catEducation:'Education', catOriginals:'Originals', catMultiplayer:'Multiplayer', catCommunity:'Community', catAll:'All'
+  },
+  es: {
+    tagline:'juegos de navegador, sin descargas', searchPlaceholder:'Buscar juegos...',
+    login:'Iniciar sesión', signup:'Registrarse', logout:'Cerrar sesión', admin:'Admin', submitGame:'Enviar un juego',
+    heroEyebrow:'BIENVENIDO A RUMPUS', heroTitle:'Juegos de navegador, sin descargas.',
+    heroDesc:'Esta biblioteca está vacía por ahora — cada juego aquí viene de creadores como tú. Envía un enlace a tu juego y aparecerá para todos en cuanto sea aprobado.',
+    heroEmpty:'Aún no hay juegos — sé el primero en añadir uno.',
+    footer:'Rumpus es un juego original y no está afiliado a ninguna otra plataforma de juegos.',
+    emptyDefault:'Ningún juego coincide con esa búsqueda. Prueba otra palabra o categoría.',
+    emptyRecent:'Aún no has jugado nada — los juegos recientes aparecerán aquí.',
+    allGames:'Todos los juegos', language:'Idioma',
+    navHome:'Inicio', navRecent:'Jugados recientemente', navNew:'Nuevos', navPopular:'Juegos populares',
+    navUpdated:'Actualizados', navLeaderboards:'Clasificación',
+    catAction:'Acción', catAdventure:'Aventura', catArcade:'Arcade', catBoard:'Mesa', catCard:'Cartas',
+    catClicker:'Clicker', catDriving:'Conducción', catIo:'.io', catPuzzle:'Puzzle', catShooting:'Disparos',
+    catSimulation:'Simulación', catSports:'Deportes', catStrategy:'Estrategia', catTrivia:'Trivia', catWord:'Palabras',
+    catEducation:'Educativo', catOriginals:'Originales', catMultiplayer:'Multijugador', catCommunity:'Comunidad', catAll:'Todos'
+  },
+  fr: {
+    tagline:'jeux de navigateur, sans téléchargement', searchPlaceholder:'Rechercher des jeux...',
+    login:'Connexion', signup:"S'inscrire", logout:'Déconnexion', admin:'Admin', submitGame:'Soumettre un jeu',
+    heroEyebrow:'BIENVENUE SUR RUMPUS', heroTitle:'Jeux de navigateur, sans téléchargement.',
+    heroDesc:"Cette bibliothèque est vide pour l'instant — chaque jeu ici vient de créateurs comme vous. Soumettez un lien vers votre jeu et il apparaîtra pour tout le monde dès son approbation.",
+    heroEmpty:"Aucun jeu pour l'instant — soyez le premier à en ajouter un.",
+    footer:'Rumpus est un jeu original et non affilié à une autre plateforme de jeux.',
+    emptyDefault:"Aucun jeu ne correspond à cette recherche. Essayez un autre mot ou une autre catégorie.",
+    emptyRecent:"Vous n'avez encore rien joué — vos jeux récents apparaîtront ici.",
+    allGames:'Tous les jeux', language:'Langue',
+    navHome:'Accueil', navRecent:'Joués récemment', navNew:'Nouveautés', navPopular:'Jeux populaires',
+    navUpdated:'Mis à jour', navLeaderboards:'Classements',
+    catAction:'Action', catAdventure:'Aventure', catArcade:'Arcade', catBoard:'Plateau', catCard:'Cartes',
+    catClicker:'Clicker', catDriving:'Conduite', catIo:'.io', catPuzzle:'Puzzle', catShooting:'Tir',
+    catSimulation:'Simulation', catSports:'Sport', catStrategy:'Stratégie', catTrivia:'Quiz', catWord:'Mots',
+    catEducation:'Éducatif', catOriginals:'Originaux', catMultiplayer:'Multijoueur', catCommunity:'Communauté', catAll:'Tous'
+  },
+  de: {
+    tagline:'Browserspiele, kein Download', searchPlaceholder:'Spiele suchen...',
+    login:'Anmelden', signup:'Registrieren', logout:'Abmelden', admin:'Admin', submitGame:'Spiel einreichen',
+    heroEyebrow:'WILLKOMMEN BEI RUMPUS', heroTitle:'Browserspiele, kein Download.',
+    heroDesc:'Diese Bibliothek ist derzeit leer — jedes Spiel hier stammt von Machern wie dir. Reiche einen Link zu deinem Spiel ein, und es erscheint für alle, sobald es genehmigt wurde.',
+    heroEmpty:'Noch keine Spiele — sei der Erste, der eins hinzufügt.',
+    footer:'Rumpus ist ein eigenständiges Spiel und nicht mit einer anderen Spieleplattform verbunden.',
+    emptyDefault:'Keine Spiele passen zu dieser Suche. Versuche ein anderes Wort oder eine andere Kategorie.',
+    emptyRecent:'Du hast noch nichts gespielt — zuletzt gespielte Spiele erscheinen hier.',
+    allGames:'Alle Spiele', language:'Sprache',
+    navHome:'Start', navRecent:'Zuletzt gespielt', navNew:'Neu', navPopular:'Beliebte Spiele',
+    navUpdated:'Aktualisiert', navLeaderboards:'Bestenlisten',
+    catAction:'Action', catAdventure:'Abenteuer', catArcade:'Arcade', catBoard:'Brett', catCard:'Karten',
+    catClicker:'Clicker', catDriving:'Fahren', catIo:'.io', catPuzzle:'Puzzle', catShooting:'Shooter',
+    catSimulation:'Simulation', catSports:'Sport', catStrategy:'Strategie', catTrivia:'Quiz', catWord:'Wort',
+    catEducation:'Bildung', catOriginals:'Originale', catMultiplayer:'Mehrspieler', catCommunity:'Community', catAll:'Alle'
+  },
+  ja: {
+    tagline:'ダウンロード不要のブラウザゲーム', searchPlaceholder:'ゲームを検索...',
+    login:'ログイン', signup:'新規登録', logout:'ログアウト', admin:'管理者', submitGame:'ゲームを投稿',
+    heroEyebrow:'RUMPUSへようこそ', heroTitle:'ダウンロード不要のブラウザゲーム。',
+    heroDesc:'このライブラリは現在空です — ここにあるゲームはすべてあなたのようなクリエイターから届きます。ゲームのリンクを投稿すると、承認され次第みんなに公開されます。',
+    heroEmpty:'まだゲームがありません — 最初の1本を投稿しましょう。',
+    footer:'Rumpusはオリジナルのゲームであり、他のゲームプラットフォームとは関係ありません。',
+    emptyDefault:'検索に一致するゲームがありません。別のキーワードやカテゴリーをお試しください。',
+    emptyRecent:'まだ何もプレイしていません — 最近プレイしたゲームがここに表示されます。',
+    allGames:'すべてのゲーム', language:'言語',
+    navHome:'ホーム', navRecent:'最近プレイした', navNew:'新着', navPopular:'人気ゲーム',
+    navUpdated:'更新済み', navLeaderboards:'ランキング',
+    catAction:'アクション', catAdventure:'アドベンチャー', catArcade:'アーケード', catBoard:'ボード', catCard:'カード',
+    catClicker:'クリッカー', catDriving:'ドライブ', catIo:'.io', catPuzzle:'パズル', catShooting:'シューティング',
+    catSimulation:'シミュレーション', catSports:'スポーツ', catStrategy:'ストラテジー', catTrivia:'トリビア', catWord:'ワード',
+    catEducation:'教育', catOriginals:'オリジナル', catMultiplayer:'マルチプレイヤー', catCommunity:'コミュニティ', catAll:'すべて'
+  }
+};
+const CATEGORY_KEYS = {
+  'All':'catAll','Action':'catAction','Adventure':'catAdventure','Arcade':'catArcade','Board':'catBoard','Card':'catCard',
+  'Clicker':'catClicker','Driving':'catDriving','.io':'catIo','Puzzle':'catPuzzle','Shooting':'catShooting',
+  'Simulation':'catSimulation','Sports':'catSports','Strategy':'catStrategy','Trivia':'catTrivia','Word':'catWord',
+  'Education':'catEducation','Originals':'catOriginals','Multiplayer':'catMultiplayer','Community':'catCommunity'
+};
+const VIEW_KEYS = { home:'navHome', recent:'navRecent', new:'navNew', popular:'navPopular', updated:'navUpdated', leaderboards:'navLeaderboards' };
+let currentLang = 'en';
+function t(key){ return (STRINGS[currentLang] && STRINGS[currentLang][key]) || STRINGS.en[key] || key; }
+
+function updateStaticText(){
+  const tag = document.getElementById('taglineText'); if(tag) tag.textContent = t('tagline');
+  const search = document.getElementById('searchInput'); if(search) search.placeholder = t('searchPlaceholder');
+  const submitBtn = document.getElementById('submitGameBtn'); if(submitBtn) submitBtn.textContent = t('submitGame');
+  const eyebrow = document.getElementById('heroEyebrowText'); if(eyebrow) eyebrow.textContent = t('heroEyebrow');
+  const heroTitle = document.getElementById('heroTitleText'); if(heroTitle) heroTitle.textContent = t('heroTitle');
+  const heroDesc = document.getElementById('heroDescText'); if(heroDesc) heroDesc.textContent = t('heroDesc');
+  const heroEmpty = document.getElementById('heroEmptyText'); if(heroEmpty) heroEmpty.textContent = t('heroEmpty');
+  const heroBtn = document.getElementById('heroPlayBtn'); if(heroBtn) heroBtn.textContent = t('submitGame');
+  const footer = document.getElementById('footerText'); if(footer) footer.textContent = t('footer');
+  document.querySelectorAll('.side-item[data-cat]').forEach(btn => {
+    const key = CATEGORY_KEYS[btn.dataset.cat]; const label = btn.querySelector('.label');
+    if(key && label) label.textContent = t(key);
+  });
+  document.querySelectorAll('.side-item[data-view]').forEach(btn => {
+    const key = VIEW_KEYS[btn.dataset.view]; const label = btn.querySelector('.label');
+    if(key && label) label.textContent = t(key);
+  });
+  const sideSubmit = document.getElementById('sideSubmit'); if(sideSubmit) sideSubmit.querySelector('.label').textContent = t('submitGame');
+}
+
+async function applyLanguage(lang){
+  currentLang = lang;
+  await sSet('rumpus:lang', lang);
+  if(currentUser){ currentUser.language = lang; await persistUser(); }
+  updateStaticText();
+  renderAuthArea();
+  renderPills();
+  renderGrid();
+}
+
+async function restoreLanguage(){
+  try{
+    const saved = await sGet('rumpus:lang');
+    if(saved && STRINGS[saved]) currentLang = saved;
+  }catch(e){ /* stay on default */ }
+}
+
 
 /* ======================= tiny storage helpers (browser localStorage, per-device) ======================= */
 function sGet(key){
@@ -435,16 +643,16 @@ function renderAuthArea(){
       <div class="avatar-pill" id="profilePill" title="View profile &amp; settings">
         ${avatarHtml(currentUser)} ${escapeHtml(currentUser.username)}
       </div>
-      ${currentUser.isAdmin ? '<button class="btn ghost" id="adminBtn" style="border-color:var(--yellow); color:var(--yellow);">Admin</button>' : ''}
-      <button class="btn ghost" id="logoutBtn">Log out</button>
+      ${currentUser.isAdmin ? `<button class="btn ghost" id="adminBtn" style="border-color:var(--yellow); color:var(--yellow);">${t('admin')}</button>` : ''}
+      <button class="btn ghost" id="logoutBtn">${t('logout')}</button>
     `;
     document.getElementById('profilePill').onclick = openProfile;
     document.getElementById('logoutBtn').onclick = logout;
     if(currentUser.isAdmin) document.getElementById('adminBtn').onclick = openAdminPanel;
   } else {
     el.innerHTML = `
-      <button class="btn ghost" id="loginBtn">Log in</button>
-      <button class="btn primary" id="signupBtn">Sign up</button>
+      <button class="btn ghost" id="loginBtn">${t('login')}</button>
+      <button class="btn primary" id="signupBtn">${t('signup')}</button>
     `;
     document.getElementById('loginBtn').onclick = () => openAuth('login');
     document.getElementById('signupBtn').onclick = () => openAuth('signup');
@@ -1036,7 +1244,14 @@ function renderProfileSettings(content){
       </div>
 
       <div class="pv-section">
-        <button class="btn ghost" id="pvLogout" style="color:var(--pink); border-color:var(--pink);">Log out</button>
+        <h3>${t('language')}</h3>
+        <p class="pv-dim" style="margin-bottom:10px;">Only a few of these have translated interface text so far (marked ✓) — the rest currently show English text until translated.</p>
+        <input id="langSearch" type="text" placeholder="Search languages..." style="width:100%; max-width:320px; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:13px; font-family:inherit; margin-bottom:8px;" />
+        <div id="langList" style="max-width:320px; max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:10px;"></div>
+      </div>
+
+      <div class="pv-section">
+        <button class="btn ghost" id="pvLogout" style="color:var(--pink); border-color:var(--pink);">${t('logout')}</button>
       </div>
     </div>
   `;
@@ -1100,6 +1315,27 @@ function renderProfileSettings(content){
     document.getElementById('editNewPass').value = '';
   };
   document.getElementById('pvLogout').onclick = async () => { closeProfile(); await logout(); };
+  function renderLangList(filter){
+    const listEl = document.getElementById('langList');
+    const q = (filter || '').trim().toLowerCase();
+    const matches = q ? LANGUAGES.filter(l => l.label.toLowerCase().includes(q) || l.code.includes(q)) : LANGUAGES;
+    if(matches.length === 0){
+      listEl.innerHTML = '<div class="pv-dim" style="padding:14px; text-align:center;">No languages match that search.</div>';
+      return;
+    }
+    listEl.innerHTML = matches.map(l => {
+      const hasTranslation = !!(STRINGS[l.code]);
+      const isCurrent = l.code === currentLang;
+      return `<button class="side-item lang-option" data-lang="${l.code}" style="width:100%; padding:9px 14px; opacity:1; color:${isCurrent ? 'var(--text)' : 'var(--text-dim)'}; background:${isCurrent ? 'var(--surface-hi)' : 'none'}; border-bottom:1px solid var(--line);">
+        <span class="label" style="opacity:1;">${escapeHtml(l.label)}${hasTranslation ? ' <span style="color:var(--mint);">✓</span>' : ''}</span>
+      </button>`;
+    }).join('');
+    listEl.querySelectorAll('.lang-option').forEach(btn => {
+      btn.onclick = async () => { await applyLanguage(btn.dataset.lang); renderProfileView(); };
+    });
+  }
+  renderLangList('');
+  document.getElementById('langSearch').addEventListener('input', (e) => renderLangList(e.target.value));
 }
 
 function formatScore(gameId, v){
@@ -1115,7 +1351,7 @@ function formatScore(gameId, v){
 function renderPills(){
   const bar = document.getElementById('pillbar');
   bar.innerHTML = CATEGORIES.map(c =>
-    `<button class="pill ${c===activeCategory && viewMode==='home' ? 'active':''}" data-cat="${c}">${c}</button>`
+    `<button class="pill ${c===activeCategory && viewMode==='home' ? 'active':''}" data-cat="${c}">${t(CATEGORY_KEYS[c] || c)}</button>`
   ).join('');
   bar.querySelectorAll('.pill').forEach(p => {
     p.onclick = () => { setCategory(p.dataset.cat); };
@@ -1192,7 +1428,7 @@ async function renderGrid(){
     list = list.filter(g => g.name.toLowerCase().includes(q) || g.cat.toLowerCase().includes(q));
   }
 
-  let emptyMsg = 'No games match that search. Try a different word or category.';
+  let emptyMsg = t('emptyDefault');
 
   if(viewMode === 'new'){
     list = [...list].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
@@ -1208,7 +1444,7 @@ async function renderGrid(){
     if(myToken !== renderToken) return;
     const order = {}; recents.forEach((r,i) => order[r.id] = i);
     list = list.filter(g => order[g.id] !== undefined).sort((a,b) => order[a.id] - order[b.id]);
-    emptyMsg = 'You haven\'t played anything yet — recently played games will show up here.';
+    emptyMsg = t('emptyRecent');
   } else if(viewMode === 'updated'){
     // No edit-history tracking yet, so this currently mirrors the full library.
     list = [...list].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
@@ -1218,7 +1454,7 @@ async function renderGrid(){
   }
   if(myToken !== renderToken) return;
 
-  document.getElementById('gridTitle').textContent = viewMode !== 'home' ? VIEW_TITLES[viewMode] : (activeCategory === 'All' ? 'All games' : activeCategory);
+  document.getElementById('gridTitle').textContent = viewMode !== 'home' ? VIEW_TITLES[viewMode] : (activeCategory === 'All' ? t('allGames') : t(CATEGORY_KEYS[activeCategory] || activeCategory));
   document.getElementById('gridCount').textContent = `${list.length} game${list.length!==1?'s':''}`;
 
   if(list.length === 0){
@@ -2160,7 +2396,10 @@ async function restoreSession(){
 }
 
 (async () => {
+  await restoreLanguage();
   await restoreSession();
+  if(currentUser && currentUser.language && STRINGS[currentUser.language]) currentLang = currentUser.language;
+  updateStaticText();
   renderAuthArea();
   renderPills();
   await loadCommunityGames();
