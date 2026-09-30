@@ -1,0 +1,2892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rumpus — browser games, no downloads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400..800&family=Wix+Madefor+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14121f;
+    --bg-raise: #1c1930;
+    --surface: #211d3a;
+    --surface-hi: #2a2549;
+    --line: #352f57;
+    --text: #f3f1fb;
+    --text-dim: #a89fc9;
+    --yellow: #f2c14e;
+    --mint: #57e3b0;
+    --pink: #ef6f9e;
+    --sky: #63b3f2;
+    --violet: #a680f2;
+    --coral: #f2884e;
+    --radius-card: 14px;
+    font-size: 16px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: radial-gradient(1200px 800px at 15% -10%, #241f42 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Wix Madefor Text', system-ui, -apple-system, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    padding-left: 64px;
+  }
+  h1,h2,h3,.wordmark{
+    font-family: 'Wix Madefor Display', 'Wix Madefor Text', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  a{ color:inherit; }
+  button{ font-family: inherit; cursor:pointer; }
+  ::selection{ background: var(--yellow); color:#14121f; }
+
+  /* ---------- layout shell ---------- */
+  .shell{ max-width: 1180px; margin: 0 auto; padding: 0 24px 80px; }
+  header.top{
+    position: sticky; top:0; z-index: 40;
+    background: rgba(20,18,31,0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .top-inner{
+    max-width: 1180px; margin:0 auto; padding: 16px 24px;
+    display:flex; align-items:center; gap:20px; flex-wrap: wrap;
+  }
+  .wordmark{ font-size: 26px; color: var(--text); white-space:nowrap; display:flex; align-items:baseline; gap:8px;}
+  .wordmark span{ color: var(--yellow); }
+  .tagline{ font-size: 12px; color: var(--text-dim); font-family: inherit; font-weight:400; margin-left:2px; }
+
+  .search-wrap{ flex: 1 1 260px; min-width: 180px; position: relative; }
+  .search-wrap input{
+    width:100%; padding: 10px 14px 10px 36px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--text);
+    font-size: 14px; outline: none;
+  }
+  .search-wrap input:focus{ border-color: var(--yellow); }
+  .search-wrap svg{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:0.6; }
+
+  .auth-area{ display:flex; align-items:center; gap:10px; }
+  .btn{
+    padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--text); font-size: 14px; font-weight:600;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .btn:hover{ border-color: var(--text-dim); transform: translateY(-1px); }
+  .btn.primary{ background: var(--yellow); color:#14121f; border-color: var(--yellow); }
+  .btn.primary:hover{ filter: brightness(1.06); }
+  .btn.ghost{ background: transparent; }
+  .btn:active{ transform: translateY(0); }
+
+  .avatar-pill{
+    display:flex; align-items:center; gap:8px; padding:6px 14px 6px 6px;
+    border-radius: 999px; background: var(--surface); border:1px solid var(--line);
+    font-size: 13px; font-weight:600; cursor:pointer; transition: border-color .12s ease;
+  }
+  .avatar-pill:hover{ border-color: var(--text-dim); }
+  .avatar-dot{
+    width: 26px; height:26px; border-radius:50%;
+    background: linear-gradient(135deg, var(--mint), var(--sky));
+    display:flex; align-items:center; justify-content:center; font-size:12px; color:#0d1f1a; font-weight:800;
+  }
+
+  /* ---------- category pills ---------- */
+  .pillbar{ display:flex; gap:8px; overflow-x:auto; padding: 18px 0 6px; }
+  .pillbar::-webkit-scrollbar{ display:none; }
+  .pill{
+    flex: 0 0 auto; padding: 7px 15px; border-radius: 999px; font-size: 13px; font-weight:600;
+    background: var(--surface); border: 1px solid var(--line); color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .pill.active{ background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  /* ---------- hero ---------- */
+  .hero{
+    margin-top: 22px; border-radius: 22px; border: 1px solid var(--line);
+    background: linear-gradient(120deg, #241f42, #1a1730 70%);
+    padding: 26px; display:grid; grid-template-columns: 1.1fr 1fr; gap: 28px; align-items:center;
+  }
+  @media (max-width: 760px){ .hero{ grid-template-columns: 1fr; } }
+  .hero-copy .eyebrow{ color: var(--mint); font-size: 13px; font-weight:700; margin:0 0 8px; }
+  .hero-copy h1{ font-size: 34px; line-height:1.15; margin: 0 0 10px; }
+  .hero-copy p{ color: var(--text-dim); font-size: 15px; line-height:1.55; max-width: 46ch; margin: 0 0 18px;}
+  .hero-stage{
+    background: #0e0c1a; border-radius: 16px; border:1px solid var(--line);
+    padding: 14px; display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  #heroCanvas{ image-rendering: pixelated; border-radius: 10px; background:#0a0916; }
+  .hero-stage .hs-label{ font-size: 12px; color: var(--text-dim); }
+
+  /* ---------- game grid ---------- */
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; margin: 34px 0 14px; }
+  .section-head h2{ font-size: 20px; margin:0; }
+  .section-head .count{ color: var(--text-dim); font-size: 13px; }
+
+  .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 16px; }
+  .card{
+    position:relative; border-radius: var(--radius-card); border: 1px solid var(--line);
+    background: var(--surface); overflow:hidden; display:flex; flex-direction:column;
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .card:hover{ transform: translateY(-3px); border-color: var(--text-dim); }
+  .card .notch{
+    position:absolute; top:0; right:18px; width: 26px; height: 12px;
+    background: var(--bg); border-bottom-left-radius:8px; border-bottom-right-radius:8px;
+  }
+  .thumb{
+    height: 110px; display:flex; align-items:center; justify-content:center; font-size: 38px;
+  }
+  .card-body{ padding: 12px 14px 14px; display:flex; flex-direction:column; gap:6px; flex:1; }
+  .card-body h3{ font-size: 15px; margin:0; }
+  .card-tag{ font-size: 11px; color: var(--text-dim); font-weight:600; }
+  .card-foot{ margin-top:auto; display:flex; align-items:center; justify-content:space-between; padding-top:8px; }
+  .best{ font-size: 12px; color: var(--yellow); font-weight:700; }
+  .play-btn{
+    font-size: 12px; font-weight:700; padding: 6px 12px; border-radius: 999px;
+    background: var(--surface-hi); border:1px solid var(--line); color:var(--text);
+  }
+  .card:hover .play-btn{ background: var(--yellow); color:#14121f; border-color:var(--yellow); }
+  .card.soon{ opacity: 0.55; }
+  .card.soon .play-btn{ pointer-events:none; }
+
+  .empty{
+    text-align:center; padding: 60px 20px; color: var(--text-dim); border:1px dashed var(--line);
+    border-radius: 16px;
+  }
+
+  /* ---------- modal (auth + game) ---------- */
+  .overlay{
+    position: fixed; inset:0; background: rgba(10,9,18,0.72); backdrop-filter: blur(4px);
+    display:flex; align-items:center; justify-content:center; z-index: 100; padding: 20px;
+  }
+  .hidden{ display:none !important; }
+  .modal{
+    background: var(--bg-raise); border:1px solid var(--line); border-radius: 18px;
+    width: 100%; max-width: 420px; padding: 26px; position:relative;
+  }
+  .modal.game-modal{ max-width: 640px; }
+  .modal .close{
+    position:absolute; top:14px; right:14px; background: none; border:none; color: var(--text-dim);
+    font-size: 20px; line-height:1; padding:4px;
+  }
+  .modal .close:hover{ color: var(--text); }
+  .modal h2{ margin: 0 0 4px; font-size: 22px; }
+  .modal .sub{ color: var(--text-dim); font-size: 13px; margin: 0 0 18px; }
+  .field{ margin-bottom: 14px; }
+  .field label{ display:block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; font-weight:600; }
+  .field input{
+    width:100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--text); font-size: 14px; outline:none;
+  }
+  .field input:focus{ border-color: var(--yellow); }
+  .form-msg{ font-size: 13px; min-height: 18px; margin: -4px 0 12px; color: var(--coral); }
+  .switch-line{ font-size: 13px; color: var(--text-dim); margin-top: 14px; text-align:center; }
+  .switch-line button{ background:none; border:none; color: var(--mint); font-weight:700; padding:0; }
+
+  .game-head{ display:flex; align-items:center; justify-content:space-between; gap: 12px; margin-bottom: 14px; padding-right: 26px;}
+  .game-head .gh-title{ display:flex; align-items:center; gap:10px; }
+  .game-head .gh-title span.icon{ font-size: 24px; }
+  .game-head h2{ font-size: 20px; margin:0; }
+  .game-stats{ display:flex; gap: 14px; font-size: 13px; color: var(--text-dim); margin-bottom: 10px; flex-wrap:wrap;}
+  .game-stats b{ color: var(--text); }
+  .game-stage{
+    background:#0e0c1a; border-radius: 14px; border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; padding: 14px; min-height: 300px;
+  }
+  .game-note{ font-size: 12px; color: var(--text-dim); margin-top: 10px; text-align:center; }
+  .game-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  .gt-left{ display:flex; gap:8px; }
+  .gt-btn{
+    background: var(--surface); border:1px solid var(--line); border-radius:8px; padding:7px 13px;
+    font-size:13px; font-weight:700; color:var(--text-dim); display:flex; align-items:center; gap:6px;
+  }
+  .gt-btn:hover{ border-color: var(--text-dim); }
+  .gt-btn.active{ color: var(--yellow); border-color: var(--yellow); background: rgba(242,193,78,0.08); }
+  .gt-plays{ font-size:12px; color: var(--text-dim); }
+  .leaderboard{ margin-top: 14px; font-size: 12px; color: var(--text-dim); }
+  .leaderboard b{ color: var(--text); }
+  .lb-row{ display:flex; justify-content:space-between; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+
+  footer{ text-align:center; padding: 40px 0 10px; color: var(--text-dim); font-size: 12px; }
+
+  /* ---------- full-screen profile ---------- */
+  .profile-view{ position:fixed; inset:0; z-index:90; overflow-y:auto; background: radial-gradient(1200px 800px at 15% -10%, #241f42 0%, var(--bg) 55%); }
+  .pv-inner{ max-width: 980px; margin:0 auto; padding: 24px 28px 90px; }
+  .pv-top{ display:flex; align-items:center; gap:22px; margin-top:22px; flex-wrap:wrap; }
+  .pv-id{ flex:1; min-width:200px; }
+  .pv-id h1{ margin:0 0 4px; font-size:32px; }
+  .pv-sub{ color:var(--text-dim); font-size:13px; }
+  .pv-chips{ display:flex; gap:10px; }
+  .pv-chip{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:10px 18px; text-align:center; min-width:96px; }
+  .pv-chip b{ display:block; font-size:22px; font-family:'Wix Madefor Display', sans-serif; color:var(--yellow); }
+  .pv-chip span{ font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; }
+  .pv-tabs{ display:flex; gap:6px; border-bottom:1px solid var(--line); margin:26px 0 20px; overflow-x:auto; }
+  .pv-tab{ background:none; border:none; color:var(--text-dim); padding:10px 16px; font-size:14px; font-weight:700; border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap; }
+  .pv-tab:hover{ color:var(--text); }
+  .pv-tab.active{ color:var(--text); border-bottom-color:var(--yellow); }
+  .pv-stats{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-bottom:22px; }
+  .pv-stat{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .pv-stat b{ display:block; font-size:22px; }
+  .pv-stat span{ font-size:12px; color:var(--text-dim); }
+  .pv-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border-bottom:1px solid var(--line); font-size:14px; }
+  .pv-row.me{ background: rgba(242,193,78,0.10); border-radius:10px; border-bottom-color:transparent; }
+  .pv-dim{ color:var(--text-dim); font-size:12px; }
+  .pv-rank{ width:38px; font-weight:800; color:var(--text-dim); flex-shrink:0; }
+  .pv-user{ display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+  .pv-section{ margin-bottom:26px; }
+  .pv-section h3{ font-size:16px; margin:0 0 10px; }
+  .pv-narrow{ max-width:520px; }
+  .pv-note{ font-size:12px; color:var(--text-dim); line-height:1.5; margin-top:10px; }
+
+  /* ---------- hover sidebar ---------- */
+  .sidebar{
+    position: fixed; top:0; left:0; height:100vh; width:64px;
+    background: var(--bg-raise); border-right: 1px solid var(--line);
+    overflow-x: hidden; overflow-y: auto; transition: width .18s ease;
+    z-index: 60; display:flex; flex-direction:column; padding: 5px 0;
+    scrollbar-width: none;
+  }
+  .sidebar::-webkit-scrollbar{ display:none; }
+  .sidebar:hover{ width: 210px; box-shadow: 8px 0 24px rgba(0,0,0,0.35); }
+  .side-logo{
+    display:flex; align-items:center; gap:10px; padding: 3px 18px 5px; white-space:nowrap;
+  }
+  .side-logo .dot{ width:18px; height:18px; border-radius:6px; background: var(--yellow); flex-shrink:0; }
+  .side-logo .label{ font-family:'Wix Madefor Display',sans-serif; font-weight:800; font-size:14px; opacity:0; transition: opacity .12s ease; }
+  .sidebar:hover .side-logo .label{ opacity:1; }
+  .side-item{
+    display:flex; align-items:center; gap:10px; padding: 4px 18px; white-space:nowrap;
+    color: var(--text-dim); font-size: 12px; font-weight:600; border: none; background:none;
+    width:100%; text-align:left; font-family:inherit; flex-shrink:0;
+  }
+  .side-item:hover{ color: var(--text); background: var(--surface); }
+  .side-item.active{ color: var(--text); background: var(--surface-hi); border-left:3px solid var(--yellow); padding-left:15px; }
+  .side-item .icon{ font-size:13px; width:17px; text-align:center; flex-shrink:0; }
+  .side-item .label{ opacity:0; transition: opacity .12s ease; }
+  .sidebar:hover .side-item .label{ opacity:1; }
+  .side-divider{ border:none; border-top:1px solid var(--line); margin: 3px 16px; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="side-logo"><div class="dot"></div><span class="label">Rumpus</span></div>
+  <button class="side-item active" data-view="home"><span class="icon">🏠</span><span class="label">Home</span></button>
+  <button class="side-item" data-view="recent"><span class="icon">🕐</span><span class="label">Recently played</span></button>
+  <button class="side-item" data-view="new"><span class="icon">✨</span><span class="label">New</span></button>
+  <button class="side-item" data-view="popular"><span class="icon">🔥</span><span class="label">Popular Games</span></button>
+  <button class="side-item" data-view="updated"><span class="icon">🔁</span><span class="label">Updated</span></button>
+  <button class="side-item" data-cat="Originals"><span class="icon">🛡️</span><span class="label">Originals</span></button>
+  <button class="side-item" data-cat="Multiplayer"><span class="icon">👥</span><span class="label">Multiplayer</span></button>
+  <button class="side-item" data-view="leaderboards"><span class="icon">🏆</span><span class="label">Leaderboards</span></button>
+  <hr class="side-divider">
+  <button class="side-item" data-cat="Action"><span class="icon">⚡</span><span class="label">Action</span></button>
+  <button class="side-item" data-cat="Adventure"><span class="icon">🧭</span><span class="label">Adventure</span></button>
+  <button class="side-item" data-cat="Arcade"><span class="icon">🕹️</span><span class="label">Arcade</span></button>
+  <button class="side-item" data-cat="Board"><span class="icon">♟️</span><span class="label">Board</span></button>
+  <button class="side-item" data-cat="Card"><span class="icon">🃏</span><span class="label">Card</span></button>
+  <button class="side-item" data-cat="Clicker"><span class="icon">👆</span><span class="label">Clicker</span></button>
+  <button class="side-item" data-cat="Driving"><span class="icon">🏎️</span><span class="label">Driving</span></button>
+  <button class="side-item" data-cat=".io"><span class="icon">🌐</span><span class="label">.io</span></button>
+  <button class="side-item" data-cat="Puzzle"><span class="icon">🧩</span><span class="label">Puzzle</span></button>
+  <button class="side-item" data-cat="Shooting"><span class="icon">🎯</span><span class="label">Shooting</span></button>
+  <button class="side-item" data-cat="Simulation"><span class="icon">🕹️</span><span class="label">Simulation</span></button>
+  <button class="side-item" data-cat="Sports"><span class="icon">🏈</span><span class="label">Sports</span></button>
+  <button class="side-item" data-cat="Strategy"><span class="icon">🧠</span><span class="label">Strategy</span></button>
+  <button class="side-item" data-cat="Trivia"><span class="icon">❓</span><span class="label">Trivia</span></button>
+  <button class="side-item" data-cat="Word"><span class="icon">🔤</span><span class="label">Word</span></button>
+  <button class="side-item" data-cat="Education"><span class="icon">🎓</span><span class="label">Education</span></button>
+  <hr class="side-divider">
+  <button class="side-item" id="sideSubmit"><span class="icon">📤</span><span class="label">Submit a game</span></button>
+</nav>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="wordmark">Rumpus<span>.</span><span class="tagline" id="taglineText">browser games, no downloads</span></div>
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="searchInput" type="text" placeholder="Search games..." />
+    </div>
+    <div class="auth-area" id="authArea"></div>
+    <button class="btn ghost" id="submitGameBtn">Submit a game</button>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="pillbar" id="pillbar"></div>
+
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow" id="heroEyebrowText">WELCOME TO RUMPUS</p>
+      <h1 id="heroTitleText">Browser games, no downloads.</h1>
+      <p id="heroDescText">This library is empty right now — every game here comes from creators like you. Submit a link to your game and it'll show up for everyone the moment it's approved.</p>
+      <button class="btn primary" id="heroPlayBtn">Submit a game</button>
+    </div>
+    <div class="hero-stage">
+      <div style="width:240px; height:240px; border-radius:10px; background:#0a0916; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--text-dim); font-size:13px; text-align:center; padding:20px;">
+        <span style="font-size:34px;">🎮</span>
+        <span id="heroEmptyText">No games yet — be the first to add one.</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-head">
+    <h2 id="gridTitle">All games</h2>
+    <span class="count" id="gridCount"></span>
+  </div>
+  <div class="grid" id="gameGrid"></div>
+  <div class="empty hidden" id="emptyState">No games match that search. Try a different word or category.</div>
+</div>
+
+<footer id="footerText">Rumpus is an original game and not affiliated with any other gaming platform.</footer>
+
+<!-- Auth modal -->
+<div class="overlay hidden" id="authOverlay">
+  <div class="modal">
+    <button class="close" data-close="authOverlay">&times;</button>
+    <div id="authModalBody"></div>
+  </div>
+</div>
+
+<!-- Game modal -->
+<div class="overlay hidden" id="gameOverlay">
+  <div class="modal game-modal">
+    <button class="close" data-close="gameOverlay">&times;</button>
+    <div id="gameModalBody"></div>
+  </div>
+</div>
+
+<!-- Full-screen profile page -->
+<div class="profile-view hidden" id="profileView">
+  <div class="pv-inner" id="profileViewBody"></div>
+</div>
+
+<!-- Submit-a-game modal -->
+<div class="overlay hidden" id="submitOverlay">
+  <div class="modal">
+    <button class="close" data-close="submitOverlay">&times;</button>
+    <div id="submitModalBody"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+/* ======================= DATA: game catalog ======================= */
+const GAMES = [];
+const CATEGORIES = ['All','Action','Adventure','Arcade','Board','Card','Clicker','Driving','.io','Puzzle','Shooting','Simulation','Sports','Strategy','Trivia','Word','Education','Originals','Multiplayer','Community'];
+const GENRE_OPTIONS = ['Action','Adventure','Arcade','Board','Card','Clicker','Driving','.io','Puzzle','Shooting','Simulation','Sports','Strategy','Trivia','Word','Education','Multiplayer','Community'];
+let viewMode = 'home'; // 'home' | 'new' | 'popular' | 'recent' | 'leaderboards' | 'updated'
+const ADMIN_EMAIL = 'elijahdragonknight@gmail.com';
+
+/* ======================= i18n ======================= */
+// The ISO 639-1 set: the standard list of ~180 written world languages used by virtually
+// every major platform for "all languages". Each name is shown as it's written by native
+// speakers (its endonym). Only a few of these (marked by having real entries in STRINGS)
+// have translated interface text right now — the rest fall back to English until added.
+const LANGUAGES = [
+  { code:'aa', label:'Afaraf', en:'Afar' }, { code:'ab', label:'Аҧсуа', en:'Abkhaz' }, { code:'af', label:'Afrikaans', en:'Afrikaans' },
+  { code:'ak', label:'Akan', en:'Akan' }, { code:'sq', label:'Shqip', en:'Albanian' }, { code:'am', label:'አማርኛ', en:'Amharic' },
+  { code:'ar', label:'العربية', en:'Arabic' }, { code:'an', label:'Aragonés', en:'Aragonese' }, { code:'hy', label:'Հայերեն', en:'Armenian' },
+  { code:'as', label:'অসমীয়া', en:'Assamese' }, { code:'av', label:'Авар', en:'Avaric' }, { code:'ae', label:'Avesta', en:'Avestan' },
+  { code:'ay', label:'Aymar aru', en:'Aymara' }, { code:'az', label:'Azərbaycan dili', en:'Azerbaijani' }, { code:'bm', label:'Bamanankan', en:'Bambara' },
+  { code:'ba', label:'Башҡорт теле', en:'Bashkir' }, { code:'eu', label:'Euskara', en:'Basque' }, { code:'be', label:'Беларуская', en:'Belarusian' },
+  { code:'bn', label:'বাংলা', en:'Bengali' }, { code:'bh', label:'भोजपुरी', en:'Bihari' }, { code:'bi', label:'Bislama', en:'Bislama' },
+  { code:'bs', label:'Bosanski', en:'Bosnian' }, { code:'br', label:'Brezhoneg', en:'Breton' }, { code:'bg', label:'Български', en:'Bulgarian' },
+  { code:'my', label:'မြန်မာဘာသာ', en:'Burmese' }, { code:'ca', label:'Català', en:'Catalan' }, { code:'ch', label:'Chamoru', en:'Chamorro' },
+  { code:'ce', label:'Нохчийн', en:'Chechen' }, { code:'ny', label:'Chichewa', en:'Chichewa Nyanja' }, { code:'zh', label:'中文', en:'Chinese' },
+  { code:'cv', label:'Чӑваш чӗлхи', en:'Chuvash' }, { code:'kw', label:'Kernewek', en:'Cornish' }, { code:'co', label:'Corsu', en:'Corsican' },
+  { code:'cr', label:'ᓀᐦᐃᔭᐍᐏᐣ', en:'Cree' }, { code:'hr', label:'Hrvatski', en:'Croatian' }, { code:'cs', label:'Čeština', en:'Czech' },
+  { code:'da', label:'Dansk', en:'Danish' }, { code:'dv', label:'ދިވެހި', en:'Divehi Maldivian' }, { code:'nl', label:'Nederlands', en:'Dutch' },
+  { code:'dz', label:'རྫོང་ཁ', en:'Dzongkha' }, { code:'en', label:'English', en:'English' }, { code:'eo', label:'Esperanto', en:'Esperanto' },
+  { code:'et', label:'Eesti', en:'Estonian' }, { code:'ee', label:'Eʋegbe', en:'Ewe' }, { code:'fo', label:'Føroyskt', en:'Faroese' },
+  { code:'fj', label:'Vosa Vakaviti', en:'Fijian' }, { code:'fi', label:'Suomi', en:'Finnish' }, { code:'fr', label:'Français', en:'French' },
+  { code:'ff', label:'Fulfulde', en:'Fula Fulah' }, { code:'gl', label:'Galego', en:'Galician' }, { code:'ka', label:'ქართული', en:'Georgian' },
+  { code:'de', label:'Deutsch', en:'German' }, { code:'el', label:'Ελληνικά', en:'Greek' }, { code:'gn', label:"Avañe'ẽ", en:'Guarani' },
+  { code:'gu', label:'ગુજરાતી', en:'Gujarati' }, { code:'ht', label:'Kreyòl ayisyen', en:'Haitian Creole' }, { code:'ha', label:'Hausa', en:'Hausa' },
+  { code:'he', label:'עברית', en:'Hebrew' }, { code:'hz', label:'Otjiherero', en:'Herero' }, { code:'hi', label:'हिन्दी', en:'Hindi' },
+  { code:'ho', label:'Hiri Motu', en:'Hiri Motu' }, { code:'hu', label:'Magyar', en:'Hungarian' }, { code:'ia', label:'Interlingua', en:'Interlingua' },
+  { code:'id', label:'Bahasa Indonesia', en:'Indonesian' }, { code:'ie', label:'Interlingue', en:'Interlingue' }, { code:'ga', label:'Gaeilge', en:'Irish' },
+  { code:'ig', label:'Asụsụ Igbo', en:'Igbo' }, { code:'ik', label:'Iñupiaq', en:'Inupiaq' }, { code:'io', label:'Ido', en:'Ido' },
+  { code:'is', label:'Íslenska', en:'Icelandic' }, { code:'it', label:'Italiano', en:'Italian' }, { code:'iu', label:'ᐃᓄᒃᑎᑐᑦ', en:'Inuktitut' },
+  { code:'ja', label:'日本語', en:'Japanese' }, { code:'jv', label:'Basa Jawa', en:'Javanese' }, { code:'kl', label:'Kalaallisut', en:'Greenlandic Kalaallisut' },
+  { code:'kn', label:'ಕನ್ನಡ', en:'Kannada' }, { code:'kr', label:'Kanuri', en:'Kanuri' }, { code:'ks', label:'कश्मीरी', en:'Kashmiri' },
+  { code:'kk', label:'Қазақ тілі', en:'Kazakh' }, { code:'km', label:'ខ្មែរ', en:'Khmer Cambodian' }, { code:'ki', label:'Gĩkũyũ', en:'Kikuyu Gikuyu' },
+  { code:'rw', label:'Ikinyarwanda', en:'Kinyarwanda' }, { code:'ky', label:'Кыргызча', en:'Kyrgyz' }, { code:'kv', label:'Коми кыв', en:'Komi' },
+  { code:'kg', label:'Kikongo', en:'Kongo' }, { code:'ko', label:'한국어', en:'Korean' }, { code:'ku', label:'Kurdî', en:'Kurdish' },
+  { code:'kj', label:'Kwanyama', en:'Kwanyama' }, { code:'la', label:'Latina', en:'Latin' }, { code:'lb', label:'Lëtzebuergesch', en:'Luxembourgish' },
+  { code:'lg', label:'Luganda', en:'Ganda Luganda' }, { code:'li', label:'Limburgs', en:'Limburgish' }, { code:'ln', label:'Lingála', en:'Lingala' },
+  { code:'lo', label:'ພາສາລາວ', en:'Lao' }, { code:'lt', label:'Lietuvių kalba', en:'Lithuanian' }, { code:'lu', label:'Kiluba', en:'Luba-Katanga' },
+  { code:'lv', label:'Latviešu valoda', en:'Latvian' }, { code:'gv', label:'Gaelg', en:'Manx' }, { code:'mk', label:'Македонски', en:'Macedonian' },
+  { code:'mg', label:'Malagasy', en:'Malagasy' }, { code:'ms', label:'Bahasa Melayu', en:'Malay' }, { code:'ml', label:'മലയാളം', en:'Malayalam' },
+  { code:'mt', label:'Malti', en:'Maltese' }, { code:'mi', label:'Te Reo Māori', en:'Maori' }, { code:'mr', label:'मराठी', en:'Marathi' },
+  { code:'mh', label:'Kajin M̧ajeļ', en:'Marshallese' }, { code:'mn', label:'Монгол хэл', en:'Mongolian' }, { code:'na', label:'Dorerin Naoero', en:'Nauru' },
+  { code:'nv', label:'Diné bizaad', en:'Navajo' }, { code:'nd', label:'IsiNdebele', en:'Northern Ndebele' }, { code:'ne', label:'नेपाली', en:'Nepali' },
+  { code:'ng', label:'Owambo', en:'Ndonga' }, { code:'nb', label:'Norsk Bokmål', en:'Norwegian Bokmal' }, { code:'nn', label:'Norsk Nynorsk', en:'Norwegian Nynorsk' },
+  { code:'no', label:'Norsk', en:'Norwegian' }, { code:'ii', label:'ꆈꌠ꒿ Nuosuhxop', en:'Nuosu Sichuan Yi' }, { code:'nr', label:'IsiNdebele', en:'Southern Ndebele' },
+  { code:'oc', label:'Occitan', en:'Occitan' }, { code:'oj', label:'ᐊᓂᔑᓈᐯᒧᐎᓐ', en:'Ojibwe' }, { code:'cu', label:'Ѩзыкъ словѣньскъ', en:'Church Slavic' },
+  { code:'om', label:'Afaan Oromoo', en:'Oromo' }, { code:'or', label:'ଓଡ଼ିଆ', en:'Oriya' }, { code:'os', label:'Ирон æвзаг', en:'Ossetian' },
+  { code:'pa', label:'ਪੰਜਾਬੀ', en:'Punjabi Panjabi' }, { code:'pi', label:'पाऴि', en:'Pali' }, { code:'fa', label:'فارسی', en:'Persian Farsi' },
+  { code:'pl', label:'Polski', en:'Polish' }, { code:'ps', label:'پښتو', en:'Pashto' }, { code:'pt', label:'Português', en:'Portuguese' },
+  { code:'qu', label:'Runa Simi', en:'Quechua' }, { code:'rm', label:'Rumantsch', en:'Romansh' }, { code:'rn', label:'Ikirundi', en:'Kirundi Rundi' },
+  { code:'ro', label:'Română', en:'Romanian' }, { code:'ru', label:'Русский', en:'Russian' }, { code:'sa', label:'संस्कृतम्', en:'Sanskrit' },
+  { code:'sc', label:'Sardu', en:'Sardinian' }, { code:'sd', label:'سنڌي', en:'Sindhi' }, { code:'se', label:'Davvisámegiella', en:'Northern Sami' },
+  { code:'sm', label:'Gagana Sāmoa', en:'Samoan' }, { code:'sg', label:'Sängö', en:'Sango' }, { code:'sr', label:'Српски', en:'Serbian' },
+  { code:'gd', label:'Gàidhlig', en:'Scottish Gaelic' }, { code:'sn', label:'ChiShona', en:'Shona' }, { code:'si', label:'සිංහල', en:'Sinhala Sinhalese' },
+  { code:'sk', label:'Slovenčina', en:'Slovak' }, { code:'sl', label:'Slovenščina', en:'Slovenian' }, { code:'so', label:'Soomaaliga', en:'Somali' },
+  { code:'st', label:'Sesotho', en:'Sotho Southern' }, { code:'es', label:'Español', en:'Spanish' }, { code:'su', label:'Basa Sunda', en:'Sundanese' },
+  { code:'sw', label:'Kiswahili', en:'Swahili' }, { code:'ss', label:'SiSwati', en:'Swati Siswati' }, { code:'sv', label:'Svenska', en:'Swedish' },
+  { code:'ta', label:'தமிழ்', en:'Tamil' }, { code:'te', label:'తెలుగు', en:'Telugu' }, { code:'tg', label:'Тоҷикӣ', en:'Tajik' },
+  { code:'th', label:'ไทย', en:'Thai' }, { code:'ti', label:'ትግርኛ', en:'Tigrinya' }, { code:'bo', label:'བོད་ཡིག', en:'Tibetan' },
+  { code:'tk', label:'Türkmençe', en:'Turkmen' }, { code:'tl', label:'Tagalog', en:'Tagalog Filipino' }, { code:'tn', label:'Setswana', en:'Tswana' },
+  { code:'to', label:'Faka-Tonga', en:'Tongan' }, { code:'tr', label:'Türkçe', en:'Turkish' }, { code:'ts', label:'Xitsonga', en:'Tsonga' },
+  { code:'tt', label:'Татар теле', en:'Tatar' }, { code:'tw', label:'Twi', en:'Twi' }, { code:'ty', label:'Reo Tahiti', en:'Tahitian' },
+  { code:'ug', label:'ئۇيغۇرچە', en:'Uyghur' }, { code:'uk', label:'Українська', en:'Ukrainian' }, { code:'ur', label:'اردو', en:'Urdu' },
+  { code:'uz', label:"O'zbek", en:'Uzbek' }, { code:'ve', label:'Tshivenḓa', en:'Venda' }, { code:'vi', label:'Tiếng Việt', en:'Vietnamese' },
+  { code:'vo', label:'Volapük', en:'Volapuk' }, { code:'wa', label:'Walon', en:'Walloon' }, { code:'cy', label:'Cymraeg', en:'Welsh' },
+  { code:'wo', label:'Wolof', en:'Wolof' }, { code:'fy', label:'Frysk', en:'Frisian' }, { code:'xh', label:'IsiXhosa', en:'Xhosa' },
+  { code:'yi', label:'ייִדיש', en:'Yiddish' }, { code:'yo', label:'Yorùbá', en:'Yoruba' }, { code:'za', label:'Vahcuengh', en:'Zhuang' },
+  { code:'zu', label:'IsiZulu', en:'Zulu' }
+].filter((l, i, arr) => arr.findIndex(x => x.code === l.code) === i)
+ .sort((a, b) => a.label.localeCompare(b.label));
+const STRINGS = {
+  en: {
+    tagline:'browser games, no downloads', searchPlaceholder:'Search games...',
+    login:'Log in', signup:'Sign up', logout:'Log out', admin:'Admin', submitGame:'Submit a game',
+    heroEyebrow:'WELCOME TO RUMPUS', heroTitle:'Browser games, no downloads.',
+    heroDesc:"This library is empty right now — every game here comes from creators like you. Submit a link to your game and it'll show up for everyone the moment it's approved.",
+    heroEmpty:'No games yet — be the first to add one.',
+    footer:'Rumpus is an original game and not affiliated with any other gaming platform.',
+    emptyDefault:'No games match that search. Try a different word or category.',
+    emptyRecent:"You haven't played anything yet — recently played games will show up here.",
+    allGames:'All games', language:'Language',
+    navHome:'Home', navRecent:'Recently played', navNew:'New', navPopular:'Popular Games',
+    navUpdated:'Updated', navLeaderboards:'Leaderboards',
+    catAction:'Action', catAdventure:'Adventure', catArcade:'Arcade', catBoard:'Board', catCard:'Card',
+    catClicker:'Clicker', catDriving:'Driving', catIo:'.io', catPuzzle:'Puzzle', catShooting:'Shooting',
+    catSimulation:'Simulation', catSports:'Sports', catStrategy:'Strategy', catTrivia:'Trivia', catWord:'Word',
+    catEducation:'Education', catOriginals:'Originals', catMultiplayer:'Multiplayer', catCommunity:'Community', catAll:'All'
+  },
+  es: {
+    tagline:'juegos de navegador, sin descargas', searchPlaceholder:'Buscar juegos...',
+    login:'Iniciar sesión', signup:'Registrarse', logout:'Cerrar sesión', admin:'Admin', submitGame:'Enviar un juego',
+    heroEyebrow:'BIENVENIDO A RUMPUS', heroTitle:'Juegos de navegador, sin descargas.',
+    heroDesc:'Esta biblioteca está vacía por ahora — cada juego aquí viene de creadores como tú. Envía un enlace a tu juego y aparecerá para todos en cuanto sea aprobado.',
+    heroEmpty:'Aún no hay juegos — sé el primero en añadir uno.',
+    footer:'Rumpus es un juego original y no está afiliado a ninguna otra plataforma de juegos.',
+    emptyDefault:'Ningún juego coincide con esa búsqueda. Prueba otra palabra o categoría.',
+    emptyRecent:'Aún no has jugado nada — los juegos recientes aparecerán aquí.',
+    allGames:'Todos los juegos', language:'Idioma',
+    navHome:'Inicio', navRecent:'Jugados recientemente', navNew:'Nuevos', navPopular:'Juegos populares',
+    navUpdated:'Actualizados', navLeaderboards:'Clasificación',
+    catAction:'Acción', catAdventure:'Aventura', catArcade:'Arcade', catBoard:'Mesa', catCard:'Cartas',
+    catClicker:'Clicker', catDriving:'Conducción', catIo:'.io', catPuzzle:'Puzzle', catShooting:'Disparos',
+    catSimulation:'Simulación', catSports:'Deportes', catStrategy:'Estrategia', catTrivia:'Trivia', catWord:'Palabras',
+    catEducation:'Educativo', catOriginals:'Originales', catMultiplayer:'Multijugador', catCommunity:'Comunidad', catAll:'Todos'
+  },
+  fr: {
+    tagline:'jeux de navigateur, sans téléchargement', searchPlaceholder:'Rechercher des jeux...',
+    login:'Connexion', signup:"S'inscrire", logout:'Déconnexion', admin:'Admin', submitGame:'Soumettre un jeu',
+    heroEyebrow:'BIENVENUE SUR RUMPUS', heroTitle:'Jeux de navigateur, sans téléchargement.',
+    heroDesc:"Cette bibliothèque est vide pour l'instant — chaque jeu ici vient de créateurs comme vous. Soumettez un lien vers votre jeu et il apparaîtra pour tout le monde dès son approbation.",
+    heroEmpty:"Aucun jeu pour l'instant — soyez le premier à en ajouter un.",
+    footer:'Rumpus est un jeu original et non affilié à une autre plateforme de jeux.',
+    emptyDefault:"Aucun jeu ne correspond à cette recherche. Essayez un autre mot ou une autre catégorie.",
+    emptyRecent:"Vous n'avez encore rien joué — vos jeux récents apparaîtront ici.",
+    allGames:'Tous les jeux', language:'Langue',
+    navHome:'Accueil', navRecent:'Joués récemment', navNew:'Nouveautés', navPopular:'Jeux populaires',
+    navUpdated:'Mis à jour', navLeaderboards:'Classements',
+    catAction:'Action', catAdventure:'Aventure', catArcade:'Arcade', catBoard:'Plateau', catCard:'Cartes',
+    catClicker:'Clicker', catDriving:'Conduite', catIo:'.io', catPuzzle:'Puzzle', catShooting:'Tir',
+    catSimulation:'Simulation', catSports:'Sport', catStrategy:'Stratégie', catTrivia:'Quiz', catWord:'Mots',
+    catEducation:'Éducatif', catOriginals:'Originaux', catMultiplayer:'Multijoueur', catCommunity:'Communauté', catAll:'Tous'
+  },
+  de: {
+    tagline:'Browserspiele, kein Download', searchPlaceholder:'Spiele suchen...',
+    login:'Anmelden', signup:'Registrieren', logout:'Abmelden', admin:'Admin', submitGame:'Spiel einreichen',
+    heroEyebrow:'WILLKOMMEN BEI RUMPUS', heroTitle:'Browserspiele, kein Download.',
+    heroDesc:'Diese Bibliothek ist derzeit leer — jedes Spiel hier stammt von Machern wie dir. Reiche einen Link zu deinem Spiel ein, und es erscheint für alle, sobald es genehmigt wurde.',
+    heroEmpty:'Noch keine Spiele — sei der Erste, der eins hinzufügt.',
+    footer:'Rumpus ist ein eigenständiges Spiel und nicht mit einer anderen Spieleplattform verbunden.',
+    emptyDefault:'Keine Spiele passen zu dieser Suche. Versuche ein anderes Wort oder eine andere Kategorie.',
+    emptyRecent:'Du hast noch nichts gespielt — zuletzt gespielte Spiele erscheinen hier.',
+    allGames:'Alle Spiele', language:'Sprache',
+    navHome:'Start', navRecent:'Zuletzt gespielt', navNew:'Neu', navPopular:'Beliebte Spiele',
+    navUpdated:'Aktualisiert', navLeaderboards:'Bestenlisten',
+    catAction:'Action', catAdventure:'Abenteuer', catArcade:'Arcade', catBoard:'Brett', catCard:'Karten',
+    catClicker:'Clicker', catDriving:'Fahren', catIo:'.io', catPuzzle:'Puzzle', catShooting:'Shooter',
+    catSimulation:'Simulation', catSports:'Sport', catStrategy:'Strategie', catTrivia:'Quiz', catWord:'Wort',
+    catEducation:'Bildung', catOriginals:'Originale', catMultiplayer:'Mehrspieler', catCommunity:'Community', catAll:'Alle'
+  },
+  ja: {
+    tagline:'ダウンロード不要のブラウザゲーム', searchPlaceholder:'ゲームを検索...',
+    login:'ログイン', signup:'新規登録', logout:'ログアウト', admin:'管理者', submitGame:'ゲームを投稿',
+    heroEyebrow:'RUMPUSへようこそ', heroTitle:'ダウンロード不要のブラウザゲーム。',
+    heroDesc:'このライブラリは現在空です — ここにあるゲームはすべてあなたのようなクリエイターから届きます。ゲームのリンクを投稿すると、承認され次第みんなに公開されます。',
+    heroEmpty:'まだゲームがありません — 最初の1本を投稿しましょう。',
+    footer:'Rumpusはオリジナルのゲームであり、他のゲームプラットフォームとは関係ありません。',
+    emptyDefault:'検索に一致するゲームがありません。別のキーワードやカテゴリーをお試しください。',
+    emptyRecent:'まだ何もプレイしていません — 最近プレイしたゲームがここに表示されます。',
+    allGames:'すべてのゲーム', language:'言語',
+    navHome:'ホーム', navRecent:'最近プレイした', navNew:'新着', navPopular:'人気ゲーム',
+    navUpdated:'更新済み', navLeaderboards:'ランキング',
+    catAction:'アクション', catAdventure:'アドベンチャー', catArcade:'アーケード', catBoard:'ボード', catCard:'カード',
+    catClicker:'クリッカー', catDriving:'ドライブ', catIo:'.io', catPuzzle:'パズル', catShooting:'シューティング',
+    catSimulation:'シミュレーション', catSports:'スポーツ', catStrategy:'ストラテジー', catTrivia:'トリビア', catWord:'ワード',
+    catEducation:'教育', catOriginals:'オリジナル', catMultiplayer:'マルチプレイヤー', catCommunity:'コミュニティ', catAll:'すべて'
+  },
+  zh: {
+    tagline:'无需下载的浏览器游戏', searchPlaceholder:'搜索游戏...', login:'登录',
+    signup:'注册', logout:'登出', admin:'管理员',
+    submitGame:'提交游戏', heroEyebrow:'欢迎来到RUMPUS', heroTitle:'无需下载的浏览器游戏。',
+    heroDesc:'这个游戏库目前是空的——这里的每一款游戏都来自像你一样的创作者。提交你的游戏链接，一经批准就会展示给所有人。', heroEmpty:'还没有游戏——快来添加第一个吧。', footer:'Rumpus是一款原创游戏，与其他任何游戏平台无关。',
+    emptyDefault:'没有符合搜索条件的游戏。请尝试其他关键词或分类。', emptyRecent:'你还没有玩过任何游戏——最近玩过的游戏会显示在这里。', allGames:'所有游戏',
+    language:'语言', navHome:'首页', navRecent:'最近玩过',
+    navNew:'新游戏', navPopular:'热门游戏', navUpdated:'已更新',
+    navLeaderboards:'排行榜', catAction:'动作', catAdventure:'冒险',
+    catArcade:'街机', catBoard:'棋盘', catCard:'卡牌',
+    catClicker:'点击', catDriving:'驾驶', catIo:'.io',
+    catPuzzle:'益智', catShooting:'射击', catSimulation:'模拟',
+    catSports:'体育', catStrategy:'策略', catTrivia:'问答',
+    catWord:'文字', catEducation:'教育', catOriginals:'原创',
+    catMultiplayer:'多人', catCommunity:'社区', catAll:'全部'
+  },
+  hi: {
+    tagline:'बिना डाउनलोड के ब्राउज़र गेम्स', searchPlaceholder:'गेम खोजें...', login:'लॉग इन करें',
+    signup:'साइन अप करें', logout:'लॉग आउट', admin:'एडमिन',
+    submitGame:'गेम सबमिट करें', heroEyebrow:'रम्पस में आपका स्वागत है', heroTitle:'बिना डाउनलोड के ब्राउज़र गेम्स।',
+    heroDesc:'यह लाइब्रेरी अभी खाली है — यहाँ हर गेम आप जैसे क्रिएटर्स से आता है। अपने गेम का लिंक सबमिट करें और स्वीकृत होते ही यह सभी के लिए दिखाई देगा।', heroEmpty:'अभी तक कोई गेम नहीं — पहला गेम जोड़ने वाले बनें।', footer:'Rumpus एक मौलिक गेम है और किसी अन्य गेमिंग प्लेटफ़ॉर्म से संबद्ध नहीं है।',
+    emptyDefault:'उस खोज से कोई गेम मेल नहीं खाता। कोई और शब्द या श्रेणी आज़माएं।', emptyRecent:'आपने अभी तक कुछ नहीं खेला है — हाल ही में खेले गए गेम यहाँ दिखाई देंगे।', allGames:'सभी गेम्स',
+    language:'भाषा', navHome:'होम', navRecent:'हाल ही में खेला',
+    navNew:'नया', navPopular:'लोकप्रिय गेम्स', navUpdated:'अपडेटेड',
+    navLeaderboards:'लीडरबोर्ड', catAction:'एक्शन', catAdventure:'एडवेंचर',
+    catArcade:'आर्केड', catBoard:'बोर्ड', catCard:'कार्ड',
+    catClicker:'क्लिकर', catDriving:'ड्राइविंग', catIo:'.io',
+    catPuzzle:'पज़ल', catShooting:'शूटिंग', catSimulation:'सिमुलेशन',
+    catSports:'खेल', catStrategy:'रणनीति', catTrivia:'ट्रिविया',
+    catWord:'शब्द', catEducation:'शिक्षा', catOriginals:'ओरिजिनल्स',
+    catMultiplayer:'मल्टीप्लेयर', catCommunity:'कम्युनिटी', catAll:'सभी'
+  },
+  ar: {
+    tagline:'ألعاب متصفح بدون تحميل', searchPlaceholder:'ابحث عن الألعاب...', login:'تسجيل الدخول',
+    signup:'إنشاء حساب', logout:'تسجيل الخروج', admin:'المسؤول',
+    submitGame:'إرسال لعبة', heroEyebrow:'مرحبًا بك في رمبوس', heroTitle:'ألعاب متصفح بدون تحميل.',
+    heroDesc:'هذه المكتبة فارغة الآن — كل لعبة هنا تأتي من مبدعين مثلك. أرسل رابط لعبتك وستظهر للجميع بمجرد الموافقة عليها.', heroEmpty:'لا توجد ألعاب بعد — كن أول من يضيف واحدة.', footer:'رمبوس لعبة أصلية وغير مرتبطة بأي منصة ألعاب أخرى.',
+    emptyDefault:'لا توجد ألعاب تطابق هذا البحث. جرّب كلمة أو فئة أخرى.', emptyRecent:'لم تلعب أي شيء بعد — ستظهر الألعاب التي لعبتها مؤخرًا هنا.', allGames:'كل الألعاب',
+    language:'اللغة', navHome:'الرئيسية', navRecent:'لُعبت مؤخرًا',
+    navNew:'جديد', navPopular:'الألعاب الشائعة', navUpdated:'محدّثة',
+    navLeaderboards:'لوحة المتصدرين', catAction:'أكشن', catAdventure:'مغامرة',
+    catArcade:'أركيد', catBoard:'ألعاب لوحية', catCard:'بطاقات',
+    catClicker:'كليكر', catDriving:'قيادة', catIo:'.io',
+    catPuzzle:'ألغاز', catShooting:'تصويب', catSimulation:'محاكاة',
+    catSports:'رياضة', catStrategy:'استراتيجية', catTrivia:'أسئلة وأجوبة',
+    catWord:'كلمات', catEducation:'تعليمية', catOriginals:'أصلية',
+    catMultiplayer:'متعدد اللاعبين', catCommunity:'المجتمع', catAll:'الكل'
+  },
+  pt: {
+    tagline:'jogos de navegador, sem downloads', searchPlaceholder:'Buscar jogos...', login:'Entrar',
+    signup:'Cadastrar-se', logout:'Sair', admin:'Admin',
+    submitGame:'Enviar um jogo', heroEyebrow:'BEM-VINDO AO RUMPUS', heroTitle:'Jogos de navegador, sem downloads.',
+    heroDesc:'Esta biblioteca está vazia por enquanto — cada jogo aqui vem de criadores como você. Envie um link para o seu jogo e ele aparecerá para todos assim que for aprovado.', heroEmpty:'Ainda não há jogos — seja o primeiro a adicionar um.', footer:'Rumpus é um jogo original e não é afiliado a nenhuma outra plataforma de jogos.',
+    emptyDefault:'Nenhum jogo corresponde a essa busca. Tente outra palavra ou categoria.', emptyRecent:'Você ainda não jogou nada — os jogos jogados recentemente aparecerão aqui.', allGames:'Todos os jogos',
+    language:'Idioma', navHome:'Início', navRecent:'Jogados recentemente',
+    navNew:'Novos', navPopular:'Jogos populares', navUpdated:'Atualizados',
+    navLeaderboards:'Classificação', catAction:'Ação', catAdventure:'Aventura',
+    catArcade:'Arcade', catBoard:'Tabuleiro', catCard:'Cartas',
+    catClicker:'Clicker', catDriving:'Direção', catIo:'.io',
+    catPuzzle:'Quebra-cabeça', catShooting:'Tiro', catSimulation:'Simulação',
+    catSports:'Esportes', catStrategy:'Estratégia', catTrivia:'Perguntas',
+    catWord:'Palavras', catEducation:'Educativo', catOriginals:'Originais',
+    catMultiplayer:'Multijogador', catCommunity:'Comunidade', catAll:'Todos'
+  },
+  ru: {
+    tagline:'браузерные игры без загрузок', searchPlaceholder:'Поиск игр...', login:'Войти',
+    signup:'Регистрация', logout:'Выйти', admin:'Админ',
+    submitGame:'Отправить игру', heroEyebrow:'ДОБРО ПОЖАЛОВАТЬ В RUMPUS', heroTitle:'Браузерные игры без загрузок.',
+    heroDesc:'Эта библиотека сейчас пуста — каждая игра здесь создана такими же авторами, как вы. Отправьте ссылку на свою игру, и она появится для всех сразу после одобрения.', heroEmpty:'Пока нет игр — станьте первым, кто добавит одну.', footer:'Rumpus — оригинальная игра и не связана ни с какой другой игровой платформой.',
+    emptyDefault:'Нет игр, соответствующих этому запросу. Попробуйте другое слово или категорию.', emptyRecent:'Вы пока ничего не играли — недавно сыгранные игры появятся здесь.', allGames:'Все игры',
+    language:'Язык', navHome:'Главная', navRecent:'Недавно сыгранные',
+    navNew:'Новые', navPopular:'Популярные игры', navUpdated:'Обновлённые',
+    navLeaderboards:'Таблица лидеров', catAction:'Экшен', catAdventure:'Приключения',
+    catArcade:'Аркада', catBoard:'Настольные', catCard:'Карточные',
+    catClicker:'Кликер', catDriving:'Гонки', catIo:'.io',
+    catPuzzle:'Головоломки', catShooting:'Шутеры', catSimulation:'Симуляторы',
+    catSports:'Спорт', catStrategy:'Стратегии', catTrivia:'Викторины',
+    catWord:'Слова', catEducation:'Обучающие', catOriginals:'Оригиналы',
+    catMultiplayer:'Многопользовательские', catCommunity:'Сообщество', catAll:'Все'
+  },
+  bn: {
+    tagline:'ডাউনলোড ছাড়াই ব্রাউজার গেম', searchPlaceholder:'গেম খুঁজুন...', login:'লগ ইন',
+    signup:'সাইন আপ', logout:'লগ আউট', admin:'অ্যাডমিন',
+    submitGame:'গেম জমা দিন', heroEyebrow:'রাম্পাসে স্বাগতম', heroTitle:'ডাউনলোড ছাড়াই ব্রাউজার গেম।',
+    heroDesc:'এই লাইব্রেরি এখন খালি — এখানকার প্রতিটি গেম আপনার মতো নির্মাতাদের কাছ থেকে আসে। আপনার গেমের লিঙ্ক জমা দিন, অনুমোদিত হলেই এটি সবার জন্য দেখাবে।', heroEmpty:'এখনো কোনো গেম নেই — প্রথম যোগ করুন।', footer:'Rumpus একটি মৌলিক গেম এবং অন্য কোনো গেমিং প্ল্যাটফর্মের সাথে সম্পর্কিত নয়।',
+    emptyDefault:'সেই অনুসন্ধানের সাথে কোনো গেম মেলে না। অন্য শব্দ বা বিভাগ চেষ্টা করুন।', emptyRecent:'আপনি এখনো কিছু খেলেননি — সম্প্রতি খেলা গেমগুলো এখানে দেখাবে।', allGames:'সব গেম',
+    language:'ভাষা', navHome:'হোম', navRecent:'সম্প্রতি খেলা',
+    navNew:'নতুন', navPopular:'জনপ্রিয় গেম', navUpdated:'হালনাগাদকৃত',
+    navLeaderboards:'লিডারবোর্ড', catAction:'অ্যাকশন', catAdventure:'অ্যাডভেঞ্চার',
+    catArcade:'আর্কেড', catBoard:'বোর্ড', catCard:'কার্ড',
+    catClicker:'ক্লিকার', catDriving:'ড্রাইভিং', catIo:'.io',
+    catPuzzle:'ধাঁধা', catShooting:'শুটিং', catSimulation:'সিমুলেশন',
+    catSports:'খেলাধুলা', catStrategy:'কৌশল', catTrivia:'ট্রিভিয়া',
+    catWord:'শব্দ', catEducation:'শিক্ষামূলক', catOriginals:'অরিজিনাল',
+    catMultiplayer:'মাল্টিপ্লেয়ার', catCommunity:'কমিউনিটি', catAll:'সব'
+  },
+  ur: {
+    tagline:'بغیر ڈاؤن لوڈ کے براؤزر گیمز', searchPlaceholder:'گیمز تلاش کریں...', login:'لاگ ان',
+    signup:'سائن اپ', logout:'لاگ آؤٹ', admin:'ایڈمن',
+    submitGame:'گیم جمع کروائیں', heroEyebrow:'رمپس میں خوش آمدید', heroTitle:'بغیر ڈاؤن لوڈ کے براؤزر گیمز۔',
+    heroDesc:'یہ لائبریری فی الحال خالی ہے — یہاں کی ہر گیم آپ جیسے تخلیق کاروں کی طرف سے آتی ہے۔ اپنی گیم کا لنک جمع کروائیں اور منظوری کے فوراً بعد یہ سب کے لیے دکھائی دے گی۔', heroEmpty:'ابھی تک کوئی گیم نہیں — پہلی گیم شامل کرنے والے بنیں۔', footer:'Rumpus ایک اصل گیم ہے اور کسی دوسرے گیمنگ پلیٹ فارم سے وابستہ نہیں۔',
+    emptyDefault:'اس تلاش سے کوئی گیم میل نہیں کھاتی۔ کوئی اور لفظ یا زمرہ آزمائیں۔', emptyRecent:'آپ نے ابھی تک کچھ نہیں کھیلا — حال ہی میں کھیلی گئی گیمز یہاں دکھائی دیں گی۔', allGames:'تمام گیمز',
+    language:'زبان', navHome:'ہوم', navRecent:'حال ہی میں کھیلی گئی',
+    navNew:'نئی', navPopular:'مقبول گیمز', navUpdated:'اپ ڈیٹ شدہ',
+    navLeaderboards:'لیڈر بورڈ', catAction:'ایکشن', catAdventure:'ایڈونچر',
+    catArcade:'آرکیڈ', catBoard:'بورڈ', catCard:'کارڈ',
+    catClicker:'کلکر', catDriving:'ڈرائیونگ', catIo:'.io',
+    catPuzzle:'پہیلی', catShooting:'شوٹنگ', catSimulation:'سمولیشن',
+    catSports:'کھیل', catStrategy:'حکمت عملی', catTrivia:'ٹریویا',
+    catWord:'لفظ', catEducation:'تعلیمی', catOriginals:'اوریجنلز',
+    catMultiplayer:'ملٹی پلیئر', catCommunity:'کمیونٹی', catAll:'تمام'
+  },
+  id: {
+    tagline:'game browser, tanpa unduhan', searchPlaceholder:'Cari game...', login:'Masuk',
+    signup:'Daftar', logout:'Keluar', admin:'Admin',
+    submitGame:'Kirim game', heroEyebrow:'SELAMAT DATANG DI RUMPUS', heroTitle:'Game browser, tanpa unduhan.',
+    heroDesc:'Perpustakaan ini masih kosong — setiap game di sini berasal dari kreator seperti Anda. Kirim tautan ke game Anda dan akan muncul untuk semua orang begitu disetujui.', heroEmpty:'Belum ada game — jadilah yang pertama menambahkan satu.', footer:'Rumpus adalah game orisinal dan tidak berafiliasi dengan platform game lain mana pun.',
+    emptyDefault:'Tidak ada game yang cocok dengan pencarian itu. Coba kata atau kategori lain.', emptyRecent:'Anda belum memainkan apa pun — game yang baru dimainkan akan muncul di sini.', allGames:'Semua game',
+    language:'Bahasa', navHome:'Beranda', navRecent:'Baru dimainkan',
+    navNew:'Baru', navPopular:'Game populer', navUpdated:'Diperbarui',
+    navLeaderboards:'Papan peringkat', catAction:'Aksi', catAdventure:'Petualangan',
+    catArcade:'Arcade', catBoard:'Papan', catCard:'Kartu',
+    catClicker:'Clicker', catDriving:'Mengemudi', catIo:'.io',
+    catPuzzle:'Puzzle', catShooting:'Tembak-menembak', catSimulation:'Simulasi',
+    catSports:'Olahraga', catStrategy:'Strategi', catTrivia:'Trivia',
+    catWord:'Kata', catEducation:'Edukasi', catOriginals:'Orisinal',
+    catMultiplayer:'Multipemain', catCommunity:'Komunitas', catAll:'Semua'
+  },
+  it: {
+    tagline:'giochi da browser, senza download', searchPlaceholder:'Cerca giochi...', login:'Accedi',
+    signup:'Registrati', logout:'Esci', admin:'Admin',
+    submitGame:'Invia un gioco', heroEyebrow:'BENVENUTO SU RUMPUS', heroTitle:'Giochi da browser, senza download.',
+    heroDesc:'Questa libreria è vuota per ora — ogni gioco qui viene da creatori come te. Invia un link al tuo gioco e apparirà per tutti non appena sarà approvato.', heroEmpty:'Ancora nessun gioco — sii il primo ad aggiungerne uno.', footer:'Rumpus è un gioco originale e non è affiliato a nessun\'altra piattaforma di gioco.',
+    emptyDefault:'Nessun gioco corrisponde a questa ricerca. Prova un\'altra parola o categoria.', emptyRecent:'Non hai ancora giocato a nulla — i giochi recenti appariranno qui.', allGames:'Tutti i giochi',
+    language:'Lingua', navHome:'Home', navRecent:'Giocati di recente',
+    navNew:'Nuovi', navPopular:'Giochi popolari', navUpdated:'Aggiornati',
+    navLeaderboards:'Classifiche', catAction:'Azione', catAdventure:'Avventura',
+    catArcade:'Arcade', catBoard:'Da tavolo', catCard:'Carte',
+    catClicker:'Clicker', catDriving:'Guida', catIo:'.io',
+    catPuzzle:'Puzzle', catShooting:'Sparatutto', catSimulation:'Simulazione',
+    catSports:'Sport', catStrategy:'Strategia', catTrivia:'Quiz',
+    catWord:'Parole', catEducation:'Educativo', catOriginals:'Originali',
+    catMultiplayer:'Multigiocatore', catCommunity:'Community', catAll:'Tutti'
+  },
+  tr: {
+    tagline:'indirmeden tarayıcı oyunları', searchPlaceholder:'Oyun ara...', login:'Giriş yap',
+    signup:'Kaydol', logout:'Çıkış yap', admin:'Yönetici',
+    submitGame:'Oyun gönder', heroEyebrow:'RUMPUS\'A HOŞ GELDİN', heroTitle:'İndirmeden tarayıcı oyunları.',
+    heroDesc:'Bu kütüphane şu anda boş — buradaki her oyun sizin gibi yaratıcılardan geliyor. Oyununuzun bağlantısını gönderin, onaylanır onaylanmaz herkes için görünecek.', heroEmpty:'Henüz oyun yok — ilk ekleyen sen ol.', footer:'Rumpus özgün bir oyundur ve başka herhangi bir oyun platformuyla bağlantılı değildir.',
+    emptyDefault:'Bu aramayla eşleşen oyun yok. Başka bir kelime veya kategori deneyin.', emptyRecent:'Henüz hiçbir şey oynamadınız — yakın zamanda oynanan oyunlar burada görünecek.', allGames:'Tüm oyunlar',
+    language:'Dil', navHome:'Ana sayfa', navRecent:'Son oynananlar',
+    navNew:'Yeni', navPopular:'Popüler oyunlar', navUpdated:'Güncellenenler',
+    navLeaderboards:'Liderlik tablosu', catAction:'Aksiyon', catAdventure:'Macera',
+    catArcade:'Arcade', catBoard:'Masa oyunu', catCard:'Kart',
+    catClicker:'Clicker', catDriving:'Sürüş', catIo:'.io',
+    catPuzzle:'Bulmaca', catShooting:'Nişancı', catSimulation:'Simülasyon',
+    catSports:'Spor', catStrategy:'Strateji', catTrivia:'Bilgi yarışması',
+    catWord:'Kelime', catEducation:'Eğitim', catOriginals:'Özgün',
+    catMultiplayer:'Çok oyunculu', catCommunity:'Topluluk', catAll:'Tümü'
+  },
+  vi: {
+    tagline:'trò chơi trình duyệt, không cần tải xuống', searchPlaceholder:'Tìm kiếm trò chơi...', login:'Đăng nhập',
+    signup:'Đăng ký', logout:'Đăng xuất', admin:'Quản trị viên',
+    submitGame:'Gửi trò chơi', heroEyebrow:'CHÀO MỪNG ĐẾN VỚI RUMPUS', heroTitle:'Trò chơi trình duyệt, không cần tải xuống.',
+    heroDesc:'Thư viện này hiện đang trống — mỗi trò chơi ở đây đến từ những nhà sáng tạo như bạn. Gửi liên kết trò chơi của bạn và nó sẽ hiển thị cho mọi người ngay khi được duyệt.', heroEmpty:'Chưa có trò chơi nào — hãy là người đầu tiên thêm một trò.', footer:'Rumpus là một trò chơi độc lập và không liên kết với bất kỳ nền tảng trò chơi nào khác.',
+    emptyDefault:'Không có trò chơi nào khớp với tìm kiếm đó. Hãy thử từ khác hoặc danh mục khác.', emptyRecent:'Bạn chưa chơi gì cả — các trò chơi đã chơi gần đây sẽ hiển thị ở đây.', allGames:'Tất cả trò chơi',
+    language:'Ngôn ngữ', navHome:'Trang chủ', navRecent:'Đã chơi gần đây',
+    navNew:'Mới', navPopular:'Trò chơi phổ biến', navUpdated:'Đã cập nhật',
+    navLeaderboards:'Bảng xếp hạng', catAction:'Hành động', catAdventure:'Phiêu lưu',
+    catArcade:'Arcade', catBoard:'Cờ bàn', catCard:'Bài',
+    catClicker:'Clicker', catDriving:'Lái xe', catIo:'.io',
+    catPuzzle:'Giải đố', catShooting:'Bắn súng', catSimulation:'Mô phỏng',
+    catSports:'Thể thao', catStrategy:'Chiến thuật', catTrivia:'Đố vui',
+    catWord:'Từ vựng', catEducation:'Giáo dục', catOriginals:'Độc quyền',
+    catMultiplayer:'Nhiều người chơi', catCommunity:'Cộng đồng', catAll:'Tất cả'
+  },
+  ko: {
+    tagline:'다운로드 없는 브라우저 게임', searchPlaceholder:'게임 검색...', login:'로그인',
+    signup:'회원가입', logout:'로그아웃', admin:'관리자',
+    submitGame:'게임 제출', heroEyebrow:'RUMPUS에 오신 것을 환영합니다', heroTitle:'다운로드 없는 브라우저 게임.',
+    heroDesc:'이 라이브러리는 현재 비어 있습니다 — 여기 있는 모든 게임은 당신과 같은 제작자로부터 나옵니다. 게임 링크를 제출하면 승인되는 즉시 모두에게 표시됩니다.', heroEmpty:'아직 게임이 없습니다 — 첫 번째로 추가해 보세요.', footer:'Rumpus는 독창적인 게임이며 다른 게임 플랫폼과 제휴하지 않습니다.',
+    emptyDefault:'검색과 일치하는 게임이 없습니다. 다른 단어나 카테고리를 시도해 보세요.', emptyRecent:'아직 플레이한 게임이 없습니다 — 최근에 플레이한 게임이 여기에 표시됩니다.', allGames:'모든 게임',
+    language:'언어', navHome:'홈', navRecent:'최근 플레이',
+    navNew:'신규', navPopular:'인기 게임', navUpdated:'업데이트됨',
+    navLeaderboards:'리더보드', catAction:'액션', catAdventure:'어드벤처',
+    catArcade:'아케이드', catBoard:'보드', catCard:'카드',
+    catClicker:'클리커', catDriving:'드라이빙', catIo:'.io',
+    catPuzzle:'퍼즐', catShooting:'슈팅', catSimulation:'시뮬레이션',
+    catSports:'스포츠', catStrategy:'전략', catTrivia:'퀴즈',
+    catWord:'단어', catEducation:'교육', catOriginals:'오리지널',
+    catMultiplayer:'멀티플레이어', catCommunity:'커뮤니티', catAll:'전체'
+  },
+  th: {
+    tagline:'เกมเบราว์เซอร์ ไม่ต้องดาวน์โหลด', searchPlaceholder:'ค้นหาเกม...', login:'เข้าสู่ระบบ',
+    signup:'สมัครสมาชิก', logout:'ออกจากระบบ', admin:'ผู้ดูแลระบบ',
+    submitGame:'ส่งเกม', heroEyebrow:'ยินดีต้อนรับสู่ RUMPUS', heroTitle:'เกมเบราว์เซอร์ ไม่ต้องดาวน์โหลด',
+    heroDesc:'ไลบรารีนี้ว่างเปล่าในตอนนี้ — ทุกเกมที่นี่มาจากผู้สร้างอย่างคุณ ส่งลิงก์เกมของคุณแล้วมันจะปรากฏให้ทุกคนเห็นทันทีที่ได้รับการอนุมัติ', heroEmpty:'ยังไม่มีเกม — เป็นคนแรกที่เพิ่มเกม', footer:'Rumpus เป็นเกมต้นฉบับและไม่ได้เกี่ยวข้องกับแพลตฟอร์มเกมอื่นใด',
+    emptyDefault:'ไม่มีเกมที่ตรงกับการค้นหานั้น ลองคำอื่นหรือหมวดหมู่อื่น', emptyRecent:'คุณยังไม่ได้เล่นอะไรเลย — เกมที่เล่นล่าสุดจะแสดงที่นี่', allGames:'เกมทั้งหมด',
+    language:'ภาษา', navHome:'หน้าแรก', navRecent:'เล่นล่าสุด',
+    navNew:'ใหม่', navPopular:'เกมยอดนิยม', navUpdated:'อัปเดตแล้ว',
+    navLeaderboards:'กระดานผู้นำ', catAction:'แอ็คชั่น', catAdventure:'ผจญภัย',
+    catArcade:'อาร์เคด', catBoard:'กระดาน', catCard:'การ์ด',
+    catClicker:'คลิกเกอร์', catDriving:'ขับรถ', catIo:'.io',
+    catPuzzle:'ปริศนา', catShooting:'ยิง', catSimulation:'จำลองสถานการณ์',
+    catSports:'กีฬา', catStrategy:'กลยุทธ์', catTrivia:'ตอบคำถาม',
+    catWord:'คำศัพท์', catEducation:'การศึกษา', catOriginals:'ต้นฉบับ',
+    catMultiplayer:'หลายผู้เล่น', catCommunity:'ชุมชน', catAll:'ทั้งหมด'
+  },
+  pl: {
+    tagline:'gry przeglądarkowe, bez pobierania', searchPlaceholder:'Szukaj gier...', login:'Zaloguj się',
+    signup:'Zarejestruj się', logout:'Wyloguj się', admin:'Admin',
+    submitGame:'Prześlij grę', heroEyebrow:'WITAJ W RUMPUS', heroTitle:'Gry przeglądarkowe, bez pobierania.',
+    heroDesc:'Ta biblioteka jest teraz pusta — każda gra tutaj pochodzi od twórców takich jak ty. Prześlij link do swojej gry, a pojawi się dla wszystkich, gdy tylko zostanie zatwierdzona.', heroEmpty:'Jeszcze nie ma gier — bądź pierwszym, który jakąś doda.', footer:'Rumpus to oryginalna gra i nie jest powiązana z żadną inną platformą gier.',
+    emptyDefault:'Żadna gra nie pasuje do tego wyszukiwania. Spróbuj innego słowa lub kategorii.', emptyRecent:'Jeszcze w nic nie grałeś — ostatnio grane gry pojawią się tutaj.', allGames:'Wszystkie gry',
+    language:'Język', navHome:'Strona główna', navRecent:'Ostatnio grane',
+    navNew:'Nowe', navPopular:'Popularne gry', navUpdated:'Zaktualizowane',
+    navLeaderboards:'Ranking', catAction:'Akcja', catAdventure:'Przygodowe',
+    catArcade:'Zręcznościowe', catBoard:'Planszowe', catCard:'Karciane',
+    catClicker:'Klikery', catDriving:'Wyścigi', catIo:'.io',
+    catPuzzle:'Puzzle', catShooting:'Strzelanki', catSimulation:'Symulacje',
+    catSports:'Sportowe', catStrategy:'Strategiczne', catTrivia:'Quizy',
+    catWord:'Słowne', catEducation:'Edukacyjne', catOriginals:'Oryginalne',
+    catMultiplayer:'Wieloosobowe', catCommunity:'Społeczność', catAll:'Wszystkie'
+  },
+  uk: {
+    tagline:'браузерні ігри без завантажень', searchPlaceholder:'Пошук ігор...', login:'Увійти',
+    signup:'Реєстрація', logout:'Вийти', admin:'Адмін',
+    submitGame:'Надіслати гру', heroEyebrow:'ЛАСКАВО ПРОСИМО ДО RUMPUS', heroTitle:'Браузерні ігри без завантажень.',
+    heroDesc:'Ця бібліотека зараз порожня — кожна гра тут створена такими ж авторами, як ви. Надішліть посилання на свою гру, і вона з\'явиться для всіх, щойно буде схвалена.', heroEmpty:'Ще немає ігор — станьте першим, хто додасть.', footer:'Rumpus — оригінальна гра і не пов\'язана з жодною іншою ігровою платформою.',
+    emptyDefault:'Жодна гра не відповідає цьому пошуку. Спробуйте інше слово чи категорію.', emptyRecent:'Ви ще нічого не грали — нещодавно зіграні ігри з\'являться тут.', allGames:'Усі ігри',
+    language:'Мова', navHome:'Головна', navRecent:'Нещодавно зіграні',
+    navNew:'Нові', navPopular:'Популярні ігри', navUpdated:'Оновлені',
+    navLeaderboards:'Таблиця лідерів', catAction:'Екшен', catAdventure:'Пригоди',
+    catArcade:'Аркада', catBoard:'Настільні', catCard:'Карткові',
+    catClicker:'Клікер', catDriving:'Перегони', catIo:'.io',
+    catPuzzle:'Головоломки', catShooting:'Стрілялки', catSimulation:'Симулятори',
+    catSports:'Спорт', catStrategy:'Стратегії', catTrivia:'Вікторини',
+    catWord:'Слова', catEducation:'Освітні', catOriginals:'Оригінали',
+    catMultiplayer:'Багатокористувацькі', catCommunity:'Спільнота', catAll:'Усі'
+  },
+  nl: {
+    tagline:'browsergames, geen downloads', searchPlaceholder:'Zoek games...', login:'Inloggen',
+    signup:'Registreren', logout:'Uitloggen', admin:'Beheerder',
+    submitGame:'Game indienen', heroEyebrow:'WELKOM BIJ RUMPUS', heroTitle:'Browsergames, geen downloads.',
+    heroDesc:'Deze bibliotheek is nu leeg — elke game hier komt van makers zoals jij. Dien een link naar je game in en die verschijnt voor iedereen zodra deze is goedgekeurd.', heroEmpty:'Nog geen games — wees de eerste die er een toevoegt.', footer:'Rumpus is een originele game en niet verbonden aan een ander gameplatform.',
+    emptyDefault:'Geen games komen overeen met die zoekopdracht. Probeer een ander woord of categorie.', emptyRecent:'Je hebt nog niets gespeeld — recent gespeelde games verschijnen hier.', allGames:'Alle games',
+    language:'Taal', navHome:'Home', navRecent:'Onlangs gespeeld',
+    navNew:'Nieuw', navPopular:'Populaire games', navUpdated:'Bijgewerkt',
+    navLeaderboards:'Scoreborden', catAction:'Actie', catAdventure:'Avontuur',
+    catArcade:'Arcade', catBoard:'Bordspel', catCard:'Kaartspel',
+    catClicker:'Clicker', catDriving:'Racen', catIo:'.io',
+    catPuzzle:'Puzzel', catShooting:'Schieten', catSimulation:'Simulatie',
+    catSports:'Sport', catStrategy:'Strategie', catTrivia:'Trivia',
+    catWord:'Woord', catEducation:'Educatief', catOriginals:'Originelen',
+    catMultiplayer:'Multiplayer', catCommunity:'Community', catAll:'Alle'
+  },
+  ro: {
+    tagline:'jocuri de browser, fără descărcări', searchPlaceholder:'Caută jocuri...', login:'Conectare',
+    signup:'Înregistrare', logout:'Deconectare', admin:'Admin',
+    submitGame:'Trimite un joc', heroEyebrow:'BINE AI VENIT PE RUMPUS', heroTitle:'Jocuri de browser, fără descărcări.',
+    heroDesc:'Această bibliotecă este goală acum — fiecare joc de aici vine de la creatori ca tine. Trimite un link către jocul tău și va apărea pentru toată lumea imediat ce este aprobat.', heroEmpty:'Încă niciun joc — fii primul care adaugă unul.', footer:'Rumpus este un joc original și nu este afiliat cu nicio altă platformă de jocuri.',
+    emptyDefault:'Niciun joc nu se potrivește cu această căutare. Încearcă un alt cuvânt sau altă categorie.', emptyRecent:'Nu ai jucat încă nimic — jocurile jucate recent vor apărea aici.', allGames:'Toate jocurile',
+    language:'Limbă', navHome:'Acasă', navRecent:'Jucate recent',
+    navNew:'Noi', navPopular:'Jocuri populare', navUpdated:'Actualizate',
+    navLeaderboards:'Clasament', catAction:'Acțiune', catAdventure:'Aventură',
+    catArcade:'Arcade', catBoard:'De masă', catCard:'Cărți',
+    catClicker:'Clicker', catDriving:'Condus', catIo:'.io',
+    catPuzzle:'Puzzle', catShooting:'Împușcături', catSimulation:'Simulare',
+    catSports:'Sport', catStrategy:'Strategie', catTrivia:'Trivia',
+    catWord:'Cuvinte', catEducation:'Educațional', catOriginals:'Originale',
+    catMultiplayer:'Multiplayer', catCommunity:'Comunitate', catAll:'Toate'
+  },
+  el: {
+    tagline:'παιχνίδια browser, χωρίς λήψεις', searchPlaceholder:'Αναζήτηση παιχνιδιών...', login:'Σύνδεση',
+    signup:'Εγγραφή', logout:'Αποσύνδεση', admin:'Διαχειριστής',
+    submitGame:'Υποβολή παιχνιδιού', heroEyebrow:'ΚΑΛΩΣ ΗΡΘΑΤΕ ΣΤΟ RUMPUS', heroTitle:'Παιχνίδια browser, χωρίς λήψεις.',
+    heroDesc:'Αυτή η βιβλιοθήκη είναι άδεια αυτή τη στιγμή — κάθε παιχνίδι εδώ προέρχεται από δημιουργούς σαν εσάς. Υποβάλετε έναν σύνδεσμο για το παιχνίδι σας και θα εμφανιστεί για όλους μόλις εγκριθεί.', heroEmpty:'Δεν υπάρχουν ακόμα παιχνίδια — γίνετε ο πρώτος που θα προσθέσει ένα.', footer:'Το Rumpus είναι ένα πρωτότυπο παιχνίδι και δεν σχετίζεται με καμία άλλη πλατφόρμα παιχνιδιών.',
+    emptyDefault:'Κανένα παιχνίδι δεν ταιριάζει με αυτήν την αναζήτηση. Δοκιμάστε άλλη λέξη ή κατηγορία.', emptyRecent:'Δεν έχετε παίξει ακόμα τίποτα — τα πρόσφατα παιχνίδια θα εμφανιστούν εδώ.', allGames:'Όλα τα παιχνίδια',
+    language:'Γλώσσα', navHome:'Αρχική', navRecent:'Πρόσφατα παιγμένα',
+    navNew:'Νέα', navPopular:'Δημοφιλή παιχνίδια', navUpdated:'Ενημερωμένα',
+    navLeaderboards:'Πίνακας κατάταξης', catAction:'Δράση', catAdventure:'Περιπέτεια',
+    catArcade:'Αρκέιντ', catBoard:'Επιτραπέζιο', catCard:'Χαρτιά',
+    catClicker:'Κλίκερ', catDriving:'Οδήγηση', catIo:'.io',
+    catPuzzle:'Παζλ', catShooting:'Σκοποβολή', catSimulation:'Προσομοίωση',
+    catSports:'Αθλητικά', catStrategy:'Στρατηγική', catTrivia:'Τρίβια',
+    catWord:'Λέξεις', catEducation:'Εκπαιδευτικά', catOriginals:'Πρωτότυπα',
+    catMultiplayer:'Πολλών παικτών', catCommunity:'Κοινότητα', catAll:'Όλα'
+  },
+  cs: {
+    tagline:'prohlížečové hry bez stahování', searchPlaceholder:'Hledat hry...', login:'Přihlásit se',
+    signup:'Registrovat se', logout:'Odhlásit se', admin:'Admin',
+    submitGame:'Odeslat hru', heroEyebrow:'VÍTEJTE NA RUMPUS', heroTitle:'Prohlížečové hry bez stahování.',
+    heroDesc:'Tato knihovna je nyní prázdná — každá hra zde pochází od tvůrců, jako jste vy. Odešlete odkaz na svou hru a jakmile bude schválena, zobrazí se všem.', heroEmpty:'Zatím žádné hry — buďte první, kdo nějakou přidá.', footer:'Rumpus je originální hra a není spojena s žádnou jinou herní platformou.',
+    emptyDefault:'Žádná hra neodpovídá tomuto hledání. Zkuste jiné slovo nebo kategorii.', emptyRecent:'Ještě jste nic nehráli — nedávno hrané hry se zobrazí zde.', allGames:'Všechny hry',
+    language:'Jazyk', navHome:'Domů', navRecent:'Nedávno hrané',
+    navNew:'Nové', navPopular:'Oblíbené hry', navUpdated:'Aktualizované',
+    navLeaderboards:'Žebříček', catAction:'Akční', catAdventure:'Dobrodružné',
+    catArcade:'Arkádové', catBoard:'Deskové', catCard:'Karetní',
+    catClicker:'Klikačky', catDriving:'Závodní', catIo:'.io',
+    catPuzzle:'Puzzle', catShooting:'Střílečky', catSimulation:'Simulace',
+    catSports:'Sportovní', catStrategy:'Strategické', catTrivia:'Kvízy',
+    catWord:'Slovní', catEducation:'Vzdělávací', catOriginals:'Originální',
+    catMultiplayer:'Pro více hráčů', catCommunity:'Komunita', catAll:'Všechny'
+  },
+  hu: {
+    tagline:'böngészős játékok, letöltés nélkül', searchPlaceholder:'Játékok keresése...', login:'Bejelentkezés',
+    signup:'Regisztráció', logout:'Kijelentkezés', admin:'Admin',
+    submitGame:'Játék beküldése', heroEyebrow:'ÜDVÖZLÜNK A RUMPUS-ON', heroTitle:'Böngészős játékok, letöltés nélkül.',
+    heroDesc:'Ez a könyvtár most üres — minden itteni játék hozzád hasonló alkotóktól származik. Küldd be a játékod linkjét, és jóváhagyás után mindenki számára megjelenik.', heroEmpty:'Még nincs játék — legyél az első, aki hozzáad egyet.', footer:'A Rumpus egy eredeti játék, és nem áll kapcsolatban semmilyen más játékplatformmal.',
+    emptyDefault:'Nincs a keresésnek megfelelő játék. Próbálj más szót vagy kategóriát.', emptyRecent:'Még nem játszottál semmivel — a nemrég játszott játékok itt jelennek meg.', allGames:'Összes játék',
+    language:'Nyelv', navHome:'Kezdőlap', navRecent:'Nemrég játszott',
+    navNew:'Új', navPopular:'Népszerű játékok', navUpdated:'Frissített',
+    navLeaderboards:'Ranglista', catAction:'Akció', catAdventure:'Kaland',
+    catArcade:'Arcade', catBoard:'Társasjáték', catCard:'Kártya',
+    catClicker:'Clicker', catDriving:'Vezetés', catIo:'.io',
+    catPuzzle:'Puzzle', catShooting:'Lövöldözős', catSimulation:'Szimuláció',
+    catSports:'Sport', catStrategy:'Stratégia', catTrivia:'Kvíz',
+    catWord:'Szó', catEducation:'Oktatási', catOriginals:'Eredeti',
+    catMultiplayer:'Többjátékos', catCommunity:'Közösség', catAll:'Összes'
+  },
+  sv: {
+    tagline:'webbläsarspel, inga nedladdningar', searchPlaceholder:'Sök spel...', login:'Logga in',
+    signup:'Registrera dig', logout:'Logga ut', admin:'Admin',
+    submitGame:'Skicka in ett spel', heroEyebrow:'VÄLKOMMEN TILL RUMPUS', heroTitle:'Webbläsarspel, inga nedladdningar.',
+    heroDesc:'Det här biblioteket är tomt just nu — varje spel här kommer från skapare som du. Skicka in en länk till ditt spel så visas det för alla så fort det godkänts.', heroEmpty:'Inga spel än — bli den första att lägga till ett.', footer:'Rumpus är ett originalspel och är inte anslutet till någon annan spelplattform.',
+    emptyDefault:'Inga spel matchar den sökningen. Prova ett annat ord eller kategori.', emptyRecent:'Du har inte spelat något än — nyligen spelade spel visas här.', allGames:'Alla spel',
+    language:'Språk', navHome:'Hem', navRecent:'Nyligen spelade',
+    navNew:'Nya', navPopular:'Populära spel', navUpdated:'Uppdaterade',
+    navLeaderboards:'Topplistor', catAction:'Action', catAdventure:'Äventyr',
+    catArcade:'Arkad', catBoard:'Brädspel', catCard:'Kortspel',
+    catClicker:'Clicker', catDriving:'Körning', catIo:'.io',
+    catPuzzle:'Pussel', catShooting:'Skjutspel', catSimulation:'Simulering',
+    catSports:'Sport', catStrategy:'Strategi', catTrivia:'Frågesport',
+    catWord:'Ord', catEducation:'Utbildning', catOriginals:'Original',
+    catMultiplayer:'Flerspelare', catCommunity:'Community', catAll:'Alla'
+  },
+  he: {
+    tagline:'משחקי דפדפן, ללא הורדות', searchPlaceholder:'חיפוש משחקים...', login:'התחברות',
+    signup:'הרשמה', logout:'התנתקות', admin:'מנהל',
+    submitGame:'שליחת משחק', heroEyebrow:'ברוכים הבאים ל-RUMPUS', heroTitle:'משחקי דפדפן, ללא הורדות.',
+    heroDesc:'הספרייה הזו ריקה כרגע — כל משחק כאן מגיע מיוצרים כמוך. שלח קישור למשחק שלך והוא יופיע לכולם ברגע שיאושר.', heroEmpty:'עדיין אין משחקים — היה הראשון להוסיף אחד.', footer:'Rumpus הוא משחק מקורי ואינו קשור לשום פלטפורמת משחקים אחרת.',
+    emptyDefault:'אין משחקים שתואמים לחיפוש הזה. נסה מילה או קטגוריה אחרת.', emptyRecent:'עדיין לא שיחקת כלום — משחקים שנוגנו לאחרונה יופיעו כאן.', allGames:'כל המשחקים',
+    language:'שפה', navHome:'בית', navRecent:'שוחק לאחרונה',
+    navNew:'חדש', navPopular:'משחקים פופולריים', navUpdated:'עודכנו',
+    navLeaderboards:'לוח מובילים', catAction:'אקשן', catAdventure:'הרפתקאות',
+    catArcade:'ארקייד', catBoard:'לוח', catCard:'קלפים',
+    catClicker:'קליקר', catDriving:'נהיגה', catIo:'.io',
+    catPuzzle:'פאזל', catShooting:'ירי', catSimulation:'סימולציה',
+    catSports:'ספורט', catStrategy:'אסטרטגיה', catTrivia:'טריוויה',
+    catWord:'מילים', catEducation:'חינוכי', catOriginals:'מקוריים',
+    catMultiplayer:'רב-משתתפים', catCommunity:'קהילה', catAll:'הכל'
+  },
+  da: {
+    tagline:'browserspil, ingen downloads', searchPlaceholder:'Søg spil...', login:'Log ind',
+    signup:'Tilmeld dig', logout:'Log ud', admin:'Admin',
+    submitGame:'Indsend et spil', heroEyebrow:'VELKOMMEN TIL RUMPUS', heroTitle:'Browserspil, ingen downloads.',
+    heroDesc:'Dette bibliotek er tomt lige nu — hvert spil her kommer fra skabere som dig. Indsend et link til dit spil, og det vises for alle, så snart det er godkendt.', heroEmpty:'Ingen spil endnu — vær den første til at tilføje et.', footer:'Rumpus er et originalt spil og er ikke tilknyttet nogen anden spilplatform.',
+    emptyDefault:'Ingen spil matcher den søgning. Prøv et andet ord eller en anden kategori.', emptyRecent:'Du har ikke spillet noget endnu — nyligt spillede spil vises her.', allGames:'Alle spil',
+    language:'Sprog', navHome:'Hjem', navRecent:'Senest spillet',
+    navNew:'Nye', navPopular:'Populære spil', navUpdated:'Opdaterede',
+    navLeaderboards:'Ranglister', catAction:'Action', catAdventure:'Eventyr',
+    catArcade:'Arkade', catBoard:'Brætspil', catCard:'Kortspil',
+    catClicker:'Clicker', catDriving:'Kørsel', catIo:'.io',
+    catPuzzle:'Puslespil', catShooting:'Skydespil', catSimulation:'Simulation',
+    catSports:'Sport', catStrategy:'Strategi', catTrivia:'Trivia',
+    catWord:'Ord', catEducation:'Uddannelse', catOriginals:'Originaler',
+    catMultiplayer:'Flerspiller', catCommunity:'Fællesskab', catAll:'Alle'
+  },
+  fi: {
+    tagline:'selainpelejä, ei latauksia', searchPlaceholder:'Hae pelejä...', login:'Kirjaudu sisään',
+    signup:'Rekisteröidy', logout:'Kirjaudu ulos', admin:'Ylläpitäjä',
+    submitGame:'Lähetä peli', heroEyebrow:'TERVETULOA RUMPUSIIN', heroTitle:'Selainpelejä, ei latauksia.',
+    heroDesc:'Tämä kirjasto on nyt tyhjä — jokainen tämän pelin tekijä on sinun kaltaisesi luoja. Lähetä linkki peliisi, ja se näkyy kaikille heti kun se on hyväksytty.', heroEmpty:'Ei vielä pelejä — ole ensimmäinen, joka lisää yhden.', footer:'Rumpus on omaperäinen peli eikä liity mihinkään muuhun pelialustaan.',
+    emptyDefault:'Yksikään peli ei vastaa tätä hakua. Kokeile toista sanaa tai kategoriaa.', emptyRecent:'Et ole vielä pelannut mitään — viimeksi pelatut pelit näkyvät täällä.', allGames:'Kaikki pelit',
+    language:'Kieli', navHome:'Koti', navRecent:'Äskettäin pelatut',
+    navNew:'Uudet', navPopular:'Suositut pelit', navUpdated:'Päivitetyt',
+    navLeaderboards:'Tulostaulukko', catAction:'Toiminta', catAdventure:'Seikkailu',
+    catArcade:'Arcade', catBoard:'Lautapeli', catCard:'Korttipeli',
+    catClicker:'Clicker', catDriving:'Ajopelit', catIo:'.io',
+    catPuzzle:'Pulmapeli', catShooting:'Ammuntapeli', catSimulation:'Simulaatio',
+    catSports:'Urheilu', catStrategy:'Strategia', catTrivia:'Tietovisa',
+    catWord:'Sanapeli', catEducation:'Opetus', catOriginals:'Omaperäiset',
+    catMultiplayer:'Moninpeli', catCommunity:'Yhteisö', catAll:'Kaikki'
+  },
+  no: {
+    tagline:'nettleserspill, ingen nedlastinger', searchPlaceholder:'Søk etter spill...', login:'Logg inn',
+    signup:'Registrer deg', logout:'Logg ut', admin:'Admin',
+    submitGame:'Send inn et spill', heroEyebrow:'VELKOMMEN TIL RUMPUS', heroTitle:'Nettleserspill, ingen nedlastinger.',
+    heroDesc:'Dette biblioteket er tomt akkurat nå — hvert spill her kommer fra skapere som deg. Send inn en lenke til spillet ditt, og det vises for alle så snart det er godkjent.', heroEmpty:'Ingen spill ennå — vær den første til å legge til ett.', footer:'Rumpus er et originalt spill og er ikke tilknyttet noen annen spillplattform.',
+    emptyDefault:'Ingen spill samsvarer med det søket. Prøv et annet ord eller en annen kategori.', emptyRecent:'Du har ikke spilt noe ennå — nylig spilte spill vises her.', allGames:'Alle spill',
+    language:'Språk', navHome:'Hjem', navRecent:'Nylig spilt',
+    navNew:'Nye', navPopular:'Populære spill', navUpdated:'Oppdaterte',
+    navLeaderboards:'Ledertavle', catAction:'Action', catAdventure:'Eventyr',
+    catArcade:'Arkade', catBoard:'Brettspill', catCard:'Kortspill',
+    catClicker:'Clicker', catDriving:'Kjøring', catIo:'.io',
+    catPuzzle:'Puslespill', catShooting:'Skytespill', catSimulation:'Simulering',
+    catSports:'Sport', catStrategy:'Strategi', catTrivia:'Quiz',
+    catWord:'Ord', catEducation:'Utdanning', catOriginals:'Originaler',
+    catMultiplayer:'Flerspiller', catCommunity:'Fellesskap', catAll:'Alle'
+  },
+  tl: {
+    tagline:'mga browser game, walang download', searchPlaceholder:'Maghanap ng mga laro...', login:'Mag-log in',
+    signup:'Mag-sign up', logout:'Mag-log out', admin:'Admin',
+    submitGame:'Magsumite ng laro', heroEyebrow:'MALIGAYANG PAGDATING SA RUMPUS', heroTitle:'Mga browser game, walang download.',
+    heroDesc:'Walang laman ang library na ito sa ngayon — bawat laro dito ay galing sa mga creator na tulad mo. Magsumite ng link sa iyong laro at lalabas ito para sa lahat sa sandaling ma-approve.', heroEmpty:'Wala pang laro — maging una sa pagdagdag ng isa.', footer:'Ang Rumpus ay isang orihinal na laro at hindi kaugnay sa anumang ibang gaming platform.',
+    emptyDefault:'Walang lumabas na laro sa paghahanap na iyon. Subukan ang ibang salita o kategorya.', emptyRecent:'Wala ka pang nilalaro — ang mga kamakailang nilaro ay lalabas dito.', allGames:'Lahat ng laro',
+    language:'Wika', navHome:'Home', navRecent:'Kamakailang nilaro',
+    navNew:'Bago', navPopular:'Sikat na mga laro', navUpdated:'Na-update',
+    navLeaderboards:'Leaderboard', catAction:'Aksyon', catAdventure:'Adventure',
+    catArcade:'Arcade', catBoard:'Board', catCard:'Card',
+    catClicker:'Clicker', catDriving:'Pagmamaneho', catIo:'.io',
+    catPuzzle:'Puzzle', catShooting:'Shooting', catSimulation:'Simulation',
+    catSports:'Sports', catStrategy:'Estratehiya', catTrivia:'Trivia',
+    catWord:'Salita', catEducation:'Edukasyon', catOriginals:'Orihinal',
+    catMultiplayer:'Multiplayer', catCommunity:'Komunidad', catAll:'Lahat'
+  },
+  ms: {
+    tagline:'permainan pelayar, tanpa muat turun', searchPlaceholder:'Cari permainan...', login:'Log masuk',
+    signup:'Daftar', logout:'Log keluar', admin:'Admin',
+    submitGame:'Hantar permainan', heroEyebrow:'SELAMAT DATANG KE RUMPUS', heroTitle:'Permainan pelayar, tanpa muat turun.',
+    heroDesc:'Perpustakaan ini kosong buat masa ini — setiap permainan di sini datang daripada pencipta seperti anda. Hantar pautan permainan anda dan ia akan muncul untuk semua sebaik sahaja diluluskan.', heroEmpty:'Belum ada permainan lagi — jadilah yang pertama menambah satu.', footer:'Rumpus ialah permainan asli dan tidak berafiliasi dengan mana-mana platform permainan lain.',
+    emptyDefault:'Tiada permainan sepadan dengan carian itu. Cuba perkataan atau kategori lain.', emptyRecent:'Anda belum bermain apa-apa lagi — permainan yang baru dimainkan akan dipaparkan di sini.', allGames:'Semua permainan',
+    language:'Bahasa', navHome:'Laman utama', navRecent:'Baru dimainkan',
+    navNew:'Baharu', navPopular:'Permainan popular', navUpdated:'Dikemas kini',
+    navLeaderboards:'Papan pendahulu', catAction:'Aksi', catAdventure:'Pengembaraan',
+    catArcade:'Arked', catBoard:'Papan', catCard:'Kad',
+    catClicker:'Klik', catDriving:'Memandu', catIo:'.io',
+    catPuzzle:'Teka-teki', catShooting:'Tembakan', catSimulation:'Simulasi',
+    catSports:'Sukan', catStrategy:'Strategi', catTrivia:'Trivia',
+    catWord:'Perkataan', catEducation:'Pendidikan', catOriginals:'Asli',
+    catMultiplayer:'Berbilang pemain', catCommunity:'Komuniti', catAll:'Semua'
+  },
+  fa: {
+    tagline:'بازی‌های مرورگر، بدون دانلود', searchPlaceholder:'جستجوی بازی‌ها...', login:'ورود',
+    signup:'ثبت‌نام', logout:'خروج', admin:'مدیر',
+    submitGame:'ارسال بازی', heroEyebrow:'به رامپاس خوش آمدید', heroTitle:'بازی‌های مرورگر، بدون دانلود.',
+    heroDesc:'این کتابخانه در حال حاضر خالی است — هر بازی اینجا از سازندگانی مانند شما می‌آید. لینک بازی خود را ارسال کنید و به محض تایید برای همه نمایش داده می‌شود.', heroEmpty:'هنوز بازی‌ای وجود ندارد — اولین نفری باشید که یکی اضافه می‌کند.', footer:'رامپاس یک بازی اصیل است و به هیچ پلتفرم بازی دیگری وابسته نیست.',
+    emptyDefault:'هیچ بازی‌ای با این جستجو مطابقت ندارد. کلمه یا دسته دیگری را امتحان کنید.', emptyRecent:'شما هنوز چیزی بازی نکرده‌اید — بازی‌های اخیر اینجا نمایش داده می‌شوند.', allGames:'همه بازی‌ها',
+    language:'زبان', navHome:'خانه', navRecent:'اخیراً بازی‌شده',
+    navNew:'جدید', navPopular:'بازی‌های محبوب', navUpdated:'به‌روزشده',
+    navLeaderboards:'جدول رتبه‌بندی', catAction:'اکشن', catAdventure:'ماجراجویی',
+    catArcade:'آرکید', catBoard:'تخته‌ای', catCard:'کارتی',
+    catClicker:'کلیکی', catDriving:'رانندگی', catIo:'.io',
+    catPuzzle:'پازل', catShooting:'تیراندازی', catSimulation:'شبیه‌سازی',
+    catSports:'ورزشی', catStrategy:'استراتژی', catTrivia:'تریویا',
+    catWord:'کلمه‌ای', catEducation:'آموزشی', catOriginals:'اورجینال',
+    catMultiplayer:'چندنفره', catCommunity:'انجمن', catAll:'همه'
+  },
+  sw: {
+    tagline:'michezo ya kivinjari, bila kupakua', searchPlaceholder:'Tafuta michezo...', login:'Ingia',
+    signup:'Jisajili', logout:'Toka', admin:'Msimamizi',
+    submitGame:'Wasilisha mchezo', heroEyebrow:'KARIBU RUMPUS', heroTitle:'Michezo ya kivinjari, bila kupakua.',
+    heroDesc:'Maktaba hii iko wazi kwa sasa — kila mchezo hapa unatoka kwa waundaji kama wewe. Wasilisha kiungo cha mchezo wako na utaonekana kwa kila mtu mara tu ukikubaliwa.', heroEmpty:'Bado hakuna michezo — kuwa wa kwanza kuongeza mmoja.', footer:'Rumpus ni mchezo asilia na hauhusiani na jukwaa lingine lolote la michezo.',
+    emptyDefault:'Hakuna mchezo unaolingana na utafutaji huo. Jaribu neno lingine au jamii nyingine.', emptyRecent:'Bado hujacheza chochote — michezo iliyochezwa hivi karibuni itaonekana hapa.', allGames:'Michezo yote',
+    language:'Lugha', navHome:'Nyumbani', navRecent:'Iliyochezwa hivi karibuni',
+    navNew:'Mpya', navPopular:'Michezo maarufu', navUpdated:'Iliyosasishwa',
+    navLeaderboards:'Ubao wa viongozi', catAction:'Vitendo', catAdventure:'Adventure',
+    catArcade:'Arcade', catBoard:'Bodi', catCard:'Karata',
+    catClicker:'Clicker', catDriving:'Kuendesha', catIo:'.io',
+    catPuzzle:'Fumbo', catShooting:'Kupiga risasi', catSimulation:'Uigaji',
+    catSports:'Michezo', catStrategy:'Mkakati', catTrivia:'Maswali',
+    catWord:'Neno', catEducation:'Elimu', catOriginals:'Asili',
+    catMultiplayer:'Wachezaji wengi', catCommunity:'Jumuiya', catAll:'Zote'
+  },
+  af: {
+    tagline:'blaaierspeletjies, geen aflaaie', searchPlaceholder:'Soek speletjies...', login:'Meld aan',
+    signup:'Registreer', logout:'Meld af', admin:'Admin',
+    submitGame:'Dien \'n speletjie in', heroEyebrow:'WELKOM BY RUMPUS', heroTitle:'Blaaierspeletjies, geen aflaaie.',
+    heroDesc:'Hierdie biblioteek is nou leeg — elke speletjie hier kom van skeppers soos jy. Dien \'n skakel na jou speletjie in en dit sal vir almal verskyn sodra dit goedgekeur is.', heroEmpty:'Nog geen speletjies nie — wees die eerste om een by te voeg.', footer:'Rumpus is \'n oorspronklike speletjie en is nie geaffilieer met enige ander speletjieplatform nie.',
+    emptyDefault:'Geen speletjies pas by daardie soektog nie. Probeer \'n ander woord of kategorie.', emptyRecent:'Jy het nog niks gespeel nie — onlangs gespeelde speletjies sal hier verskyn.', allGames:'Alle speletjies',
+    language:'Taal', navHome:'Tuis', navRecent:'Onlangs gespeel',
+    navNew:'Nuut', navPopular:'Gewilde speletjies', navUpdated:'Opgedateer',
+    navLeaderboards:'Ranglys', catAction:'Aksie', catAdventure:'Avontuur',
+    catArcade:'Arcade', catBoard:'Bord', catCard:'Kaart',
+    catClicker:'Clicker', catDriving:'Bestuur', catIo:'.io',
+    catPuzzle:'Legkaart', catShooting:'Skiet', catSimulation:'Simulasie',
+    catSports:'Sport', catStrategy:'Strategie', catTrivia:'Kwistrivia',
+    catWord:'Woord', catEducation:'Opvoedkundig', catOriginals:'Oorspronklike',
+    catMultiplayer:'Veelspeler', catCommunity:'Gemeenskap', catAll:'Alle'
+  },
+};
+const CATEGORY_KEYS = {
+  'All':'catAll','Action':'catAction','Adventure':'catAdventure','Arcade':'catArcade','Board':'catBoard','Card':'catCard',
+  'Clicker':'catClicker','Driving':'catDriving','.io':'catIo','Puzzle':'catPuzzle','Shooting':'catShooting',
+  'Simulation':'catSimulation','Sports':'catSports','Strategy':'catStrategy','Trivia':'catTrivia','Word':'catWord',
+  'Education':'catEducation','Originals':'catOriginals','Multiplayer':'catMultiplayer','Community':'catCommunity'
+};
+const VIEW_KEYS = { home:'navHome', recent:'navRecent', new:'navNew', popular:'navPopular', updated:'navUpdated', leaderboards:'navLeaderboards' };
+let currentLang = 'en';
+function t(key){ return (STRINGS[currentLang] && STRINGS[currentLang][key]) || STRINGS.en[key] || key; }
+
+function updateStaticText(){
+  const tag = document.getElementById('taglineText'); if(tag) tag.textContent = t('tagline');
+  const search = document.getElementById('searchInput'); if(search) search.placeholder = t('searchPlaceholder');
+  const submitBtn = document.getElementById('submitGameBtn'); if(submitBtn) submitBtn.textContent = t('submitGame');
+  const eyebrow = document.getElementById('heroEyebrowText'); if(eyebrow) eyebrow.textContent = t('heroEyebrow');
+  const heroTitle = document.getElementById('heroTitleText'); if(heroTitle) heroTitle.textContent = t('heroTitle');
+  const heroDesc = document.getElementById('heroDescText'); if(heroDesc) heroDesc.textContent = t('heroDesc');
+  const heroEmpty = document.getElementById('heroEmptyText'); if(heroEmpty) heroEmpty.textContent = t('heroEmpty');
+  const heroBtn = document.getElementById('heroPlayBtn'); if(heroBtn) heroBtn.textContent = t('submitGame');
+  const footer = document.getElementById('footerText'); if(footer) footer.textContent = t('footer');
+  document.querySelectorAll('.side-item[data-cat]').forEach(btn => {
+    const key = CATEGORY_KEYS[btn.dataset.cat]; const label = btn.querySelector('.label');
+    if(key && label) label.textContent = t(key);
+  });
+  document.querySelectorAll('.side-item[data-view]').forEach(btn => {
+    const key = VIEW_KEYS[btn.dataset.view]; const label = btn.querySelector('.label');
+    if(key && label) label.textContent = t(key);
+  });
+  const sideSubmit = document.getElementById('sideSubmit'); if(sideSubmit) sideSubmit.querySelector('.label').textContent = t('submitGame');
+}
+
+async function applyLanguage(lang){
+  currentLang = lang;
+  await sSet('rumpus:lang', lang);
+  if(currentUser){ currentUser.language = lang; await persistUser(); }
+  updateStaticText();
+  renderAuthArea();
+  renderPills();
+  renderGrid();
+}
+
+async function restoreLanguage(){
+  try{
+    const saved = await sGet('rumpus:lang');
+    if(saved && STRINGS[saved]) currentLang = saved;
+  }catch(e){ /* stay on default */ }
+}
+
+
+/* ======================= tiny storage helpers (browser localStorage, per-device) ======================= */
+function sGet(key){
+  try{ const v = localStorage.getItem(key); return Promise.resolve(v ? JSON.parse(v) : null); }
+  catch(e){ return Promise.resolve(null); }
+}
+function sSet(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); return Promise.resolve({key, value:val}); }
+  catch(e){ console.error('storage set failed', e); return Promise.resolve(null); }
+}
+function sList(prefix){
+  try{
+    const keys = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith(prefix)) keys.push(k);
+    }
+    return Promise.resolve({ keys });
+  }catch(e){ return Promise.resolve({ keys: [] }); }
+}
+function sDelete(key){
+  try{ localStorage.removeItem(key); return Promise.resolve({ key, deleted:true }); }
+  catch(e){ return Promise.resolve(null); }
+}
+
+// Formspree endpoint for automatic email notifications on submission (formspree.io — free,
+// no backend needed). Sign up, create a form, and paste your endpoint URL below. Until this
+// is set, submissions still save for review, but no email goes out automatically.
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xoeqpzpj';
+
+/* ======================= app state ======================= */
+let currentUser = null;   // { username, scores:{} }
+let activeCategory = 'All';
+let searchQuery = '';
+let communityGames = [];  // approved submissions, loaded async
+
+const AVATAR_EMOJIS = ['🐸','🦊','🐼','🐙','🦄','🐲','🤖','👾','🐧','🦁'];
+const AVATAR_COLORS = ['#57e3b0','#f2c14e','#a680f2','#63b3f2','#ef6f9e','#f2884e'];
+function avatarHtml(user, size){
+  const dim = (size ? `width:${size}px;height:${size}px;font-size:${Math.round(size*0.45)}px;` : '') + 'flex-shrink:0;';
+  if(user.avatarImage){
+    return `<div class="avatar-dot" style="${dim}overflow:hidden;background:#000;"><img src="${user.avatarImage}" alt="" style="width:100%;height:100%;object-fit:cover;"></div>`;
+  }
+  if(user.avatar){
+    return `<div class="avatar-dot" style="${dim}background:${user.avatar.color};">${user.avatar.emoji}</div>`;
+  }
+  return `<div class="avatar-dot" style="${dim}">${escapeHtml(user.username.slice(0,1).toUpperCase())}</div>`;
+}
+
+/* ======================= render: auth area ======================= */
+function renderAuthArea(){
+  const el = document.getElementById('authArea');
+  if(currentUser){
+    el.innerHTML = `
+      <div class="avatar-pill" id="profilePill" title="View profile &amp; settings">
+        ${avatarHtml(currentUser)} ${escapeHtml(currentUser.username)}
+      </div>
+      ${currentUser.isAdmin ? `<button class="btn ghost" id="adminBtn" style="border-color:var(--yellow); color:var(--yellow);">${t('admin')}</button>` : ''}
+      <button class="btn ghost" id="logoutBtn">${t('logout')}</button>
+    `;
+    document.getElementById('profilePill').onclick = openProfile;
+    document.getElementById('logoutBtn').onclick = logout;
+    if(currentUser.isAdmin) document.getElementById('adminBtn').onclick = openAdminPanel;
+  } else {
+    el.innerHTML = `
+      <button class="btn ghost" id="loginBtn">${t('login')}</button>
+      <button class="btn primary" id="signupBtn">${t('signup')}</button>
+    `;
+    document.getElementById('loginBtn').onclick = () => openAuth('login');
+    document.getElementById('signupBtn').onclick = () => openAuth('signup');
+  }
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ======================= auth flows ======================= */
+const SECURITY_QUESTIONS = [
+  'What was your first pet\'s name?',
+  'What city were you born in?',
+  'What is your favorite game genre?',
+  'What was your childhood nickname?'
+];
+
+function openAuth(mode){
+  document.getElementById('authOverlay').classList.remove('hidden');
+  renderAuthForm(mode);
+}
+
+function passwordStrengthLabel(pw){
+  if(!pw) return { text:'', color:'var(--text-dim)' };
+  if(pw.length < 6) return { text:'Too short — needs 6+ characters', color:'var(--pink)' };
+  if(pw.length < 9) return { text:'Okay strength', color:'var(--yellow)' };
+  return { text:'Strong', color:'var(--mint)' };
+}
+
+function renderAuthForm(mode){
+  const body = document.getElementById('authModalBody');
+  const isLogin = mode === 'login';
+  const isSignup = mode === 'signup';
+  body.innerHTML = `
+    <h2>${isLogin ? 'Welcome back' : 'Create your account'}</h2>
+    <p class="sub">${isLogin ? 'Log in to see your saved scores.' : 'Scores &amp; progress are stored in this app\'s local storage — tied to this browser, not private across devices.'}</p>
+    <div class="field"><label>Username</label><input id="authUser" type="text" autocomplete="username" /></div>
+    ${isSignup ? '<div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email" /></div>' : ''}
+    <div class="field">
+      <label>Password</label>
+      <input id="authPass" type="password" autocomplete="${isLogin?'current-password':'new-password'}" />
+      ${isSignup ? '<div id="pwStrength" style="font-size:11px; margin-top:5px;"></div>' : ''}
+    </div>
+    ${isSignup ? '<div class="field"><label>Confirm password</label><input id="authPassConfirm" type="password" autocomplete="new-password" /></div>' : ''}
+    ${isSignup ? `
+    <div class="field"><label>Security question (for password resets)</label>
+      <select id="authSecQ" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:14px; font-family:inherit;">
+        ${SECURITY_QUESTIONS.map(q => `<option value="${escapeHtml(q)}">${escapeHtml(q)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Answer</label><input id="authSecA" type="text" /></div>
+    ` : ''}
+    <div class="form-msg" id="authMsg"></div>
+    <button class="btn primary" style="width:100%" id="authSubmit">${isLogin ? 'Log in' : 'Sign up'}</button>
+    <div class="switch-line">
+      ${isLogin ? "New here? " : "Already have an account? "}
+      <button id="authSwitch">${isLogin ? 'Sign up' : 'Log in'}</button>
+    </div>
+    ${isLogin ? '<div class="switch-line"><button id="forgotPassBtn">Forgot password?</button></div>' : ''}
+  `;
+  document.getElementById('authSwitch').onclick = () => renderAuthForm(isLogin ? 'signup' : 'login');
+  document.getElementById('authSubmit').onclick = () => handleAuthSubmit(mode);
+  document.getElementById('authPass').addEventListener('keydown', e => { if(e.key==='Enter') handleAuthSubmit(mode); });
+  if(isSignup){
+    document.getElementById('authPass').addEventListener('input', (e) => {
+      const s = passwordStrengthLabel(e.target.value);
+      const el = document.getElementById('pwStrength');
+      el.textContent = s.text;
+      el.style.color = s.color;
+    });
+  }
+  if(isLogin){
+    document.getElementById('forgotPassBtn').onclick = () => renderForgotStep1();
+  }
+}
+
+function renderForgotStep1(){
+  const body = document.getElementById('authModalBody');
+  body.innerHTML = `
+    <h2>Reset your password</h2>
+    <p class="sub">Enter your username to answer your security question.</p>
+    <div class="field"><label>Username</label><input id="fpUser" type="text" /></div>
+    <div class="form-msg" id="fpMsg"></div>
+    <button class="btn primary" style="width:100%" id="fpContinue">Continue</button>
+    <div class="switch-line"><button id="fpBack">Back to log in</button></div>
+  `;
+  document.getElementById('fpBack').onclick = () => renderAuthForm('login');
+  document.getElementById('fpContinue').onclick = async () => {
+    const username = document.getElementById('fpUser').value.trim();
+    const msg = document.getElementById('fpMsg');
+    if(!username){ msg.textContent = 'Enter a username.'; return; }
+    const record = await sGet('rumpus:user:' + username.toLowerCase());
+    if(!record){ msg.textContent = 'No account with that username.'; return; }
+    if(!record.securityQuestion){ msg.textContent = 'This account has no security question on file (created before this feature existed) — sorry, it can\'t be reset this way.'; return; }
+    renderForgotStep2(record);
+  };
+}
+
+function renderForgotStep2(record){
+  const body = document.getElementById('authModalBody');
+  body.innerHTML = `
+    <h2>Reset your password</h2>
+    <p class="sub">${escapeHtml(record.securityQuestion)}</p>
+    <div class="field"><label>Answer</label><input id="fpAnswer" type="text" /></div>
+    <div class="field"><label>New password</label><input id="fpNewPass" type="password" /></div>
+    <div class="field"><label>Confirm new password</label><input id="fpNewPassConfirm" type="password" /></div>
+    <div class="form-msg" id="fpMsg2"></div>
+    <button class="btn primary" style="width:100%" id="fpSubmit">Reset password</button>
+    <div class="switch-line"><button id="fpBack2">Back to log in</button></div>
+  `;
+  document.getElementById('fpBack2').onclick = () => renderAuthForm('login');
+  document.getElementById('fpSubmit').onclick = async () => {
+    const answer = document.getElementById('fpAnswer').value.trim().toLowerCase();
+    const newPass = document.getElementById('fpNewPass').value;
+    const confirmPass = document.getElementById('fpNewPassConfirm').value;
+    const msg = document.getElementById('fpMsg2');
+    if(answer !== (record.securityAnswer||'')){ msg.textContent = 'That answer doesn\'t match.'; return; }
+    if(newPass.length < 6){ msg.textContent = 'New password needs at least 6 characters.'; return; }
+    if(newPass !== confirmPass){ msg.textContent = 'Passwords don\'t match.'; return; }
+    record.password = newPass;
+    await sSet('rumpus:user:' + record.username.toLowerCase(), record);
+    renderAuthForm('login');
+    document.getElementById('authMsg').textContent = 'Password reset — log in with your new password.';
+    document.getElementById('authMsg').style.color = 'var(--mint)';
+  };
+}
+
+async function handleAuthSubmit(mode){
+  const username = document.getElementById('authUser').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const msg = document.getElementById('authMsg');
+  if(!username || !pass){ msg.textContent = 'Enter a username and password.'; return; }
+  if(username.length < 3){ msg.textContent = 'Username needs at least 3 characters.'; return; }
+
+  const key = 'rumpus:user:' + username.toLowerCase();
+  const existing = await sGet(key);
+
+  if(mode === 'signup'){
+    const email = document.getElementById('authEmail').value.trim();
+    const passConfirm = document.getElementById('authPassConfirm').value;
+    const secQ = document.getElementById('authSecQ').value;
+    const secA = document.getElementById('authSecA').value.trim();
+    if(!email || !/^\S+@\S+\.\S+$/.test(email)){ msg.textContent = 'Enter a valid email.'; return; }
+    if(pass.length < 6){ msg.textContent = 'Password needs at least 6 characters.'; return; }
+    if(pass !== passConfirm){ msg.textContent = 'Passwords don\'t match.'; return; }
+    if(!secA){ msg.textContent = 'Please answer your security question (used for password resets).'; return; }
+    if(existing){ msg.textContent = 'That username is taken. Try logging in instead.'; return; }
+    const record = {
+      username, password: pass, email: email.toLowerCase(), joined: Date.now(), scores: {},
+      securityQuestion: secQ, securityAnswer: secA.toLowerCase()
+    };
+    await sSet(key, record);
+    currentUser = record;
+  } else {
+    if(!existing){ msg.textContent = 'No account with that username yet. Sign up first.'; return; }
+    if(existing.password !== pass){ msg.textContent = 'Wrong password.'; return; }
+    currentUser = existing;
+  }
+  currentUser.isAdmin = !!(currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL);
+  await sSet('rumpus:session', currentUser.username);
+  document.getElementById('authOverlay').classList.add('hidden');
+  renderAuthArea();
+  renderGrid();
+}
+async function logout(){ currentUser = null; await sDelete('rumpus:session'); renderAuthArea(); renderGrid(); }
+
+async function openAdminPanel(){
+  document.getElementById('authOverlay').classList.remove('hidden');
+  const body = document.getElementById('authModalBody');
+  body.innerHTML = `
+    <h2>Admin</h2>
+    <p class="sub">Review submitted games, and manage accounts.</p>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Pending submissions</h3>
+    <div id="adminSubs" style="max-height:220px; overflow-y:auto; margin-bottom:10px;"><p class="sub">Loading submissions…</p></div>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Published games</h3>
+    <div id="adminGames" style="max-height:220px; overflow-y:auto; margin-bottom:10px;"><p class="sub">Loading games…</p></div>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Accounts</h3>
+    <div id="adminList" style="max-height:220px; overflow-y:auto;"><p class="sub">Loading accounts…</p></div>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Data backup</h3>
+    <p class="sub" style="margin-bottom:10px;">Everything (accounts, scores, submissions) already survives site updates on its own. This backup is only in case someone clears their browser or switches devices.</p>
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button class="btn ghost" style="flex:1; font-size:13px;" id="exportBtn">⬇ Export backup</button>
+      <label class="btn ghost" style="flex:1; font-size:13px; text-align:center; cursor:pointer;">
+        ⬆ Import backup
+        <input type="file" id="importInput" accept="application/json" style="display:none;">
+      </label>
+    </div>
+    <button class="btn ghost" style="width:100%;" id="closeAdmin">Close</button>
+  `;
+  document.getElementById('closeAdmin').onclick = () => document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('exportBtn').onclick = exportAllData;
+  document.getElementById('importInput').onchange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if(file) importAllData(file);
+  };
+  await refreshAdminList();
+  await refreshAdminSubs();
+  await refreshAdminGames();
+}
+
+async function refreshAdminGames(){
+  const el = document.getElementById('adminGames');
+  if(!el) return;
+  let keys = [];
+  try{
+    const res = await sList('rumpus:submission:');
+    keys = res ? res.keys : [];
+  }catch(e){ el.innerHTML = '<p class="sub">Could not load games.</p>'; return; }
+
+  const records = await Promise.all(keys.map(async k => ({ key:k, data: await sGet(k) })));
+  const approved = records.filter(r => r.data && r.data.status === 'approved');
+
+  if(approved.length === 0){ el.innerHTML = '<p class="sub">No published games yet.</p>'; return; }
+
+  el.innerHTML = approved.map(r => {
+    const s = r.data;
+    return `
+      <div class="lb-row" style="align-items:center;">
+        <span>${escapeHtml(s.title)}<br><span style="color:var(--text-dim); font-size:11px; word-break:break-all;">${escapeHtml(s.link)}</span></span>
+        <button class="btn ghost" data-delgame="${r.key}" style="color:var(--pink); border-color:var(--pink); font-size:12px; padding:5px 10px; flex-shrink:0;">Delete</button>
+      </div>`;
+  }).join('');
+
+  el.querySelectorAll('[data-delgame]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.dataset.delgame;
+      if(!confirm('Remove this game from Rumpus? This can\'t be undone.')) return;
+      await sDelete(key);
+      await refreshAdminGames();
+      await loadCommunityGames();
+      renderGrid();
+    };
+  });
+}
+
+function exportAllData(){
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('rumpus:')) data[k] = localStorage.getItem(k);
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `rumpus-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importAllData(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      let count = 0;
+      Object.keys(data).forEach(k => {
+        if(k.startsWith('rumpus:')){ localStorage.setItem(k, data[k]); count++; }
+      });
+      alert(`Restored ${count} record(s). Reloading now.`);
+      window.location.reload();
+    }catch(e){ alert('Could not read that backup file — make sure it\'s an unedited Rumpus export.'); }
+  };
+  reader.readAsText(file);
+}
+
+async function refreshAdminSubs(){
+  const el = document.getElementById('adminSubs');
+  if(!el) return;
+  let keys = [];
+  try{
+    const res = await sList('rumpus:submission:');
+    keys = res ? res.keys : [];
+  }catch(e){ el.innerHTML = '<p class="sub">Could not load submissions.</p>'; return; }
+
+  const records = await Promise.all(keys.map(async k => ({ key:k, data: await sGet(k) })));
+  const pending = records.filter(r => r.data && r.data.status === 'pending');
+
+  if(pending.length === 0){ el.innerHTML = '<p class="sub">No pending submissions.</p>'; return; }
+
+  el.innerHTML = pending.map(r => {
+    const s = r.data;
+    return `
+      <div style="border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:8px; display:flex; gap:10px;">
+        <div style="width:48px; height:48px; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--surface); display:flex; align-items:center; justify-content:center;">
+          ${s.thumbnail ? (s.thumbnail.startsWith('data:video') ? `<video src="${s.thumbnail}" style="width:100%;height:100%;object-fit:cover;" muted loop autoplay playsinline></video>` : `<img src="${s.thumbnail}" style="width:100%;height:100%;object-fit:cover;">`) : '🎮'}
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:700; font-size:13px;">${escapeHtml(s.title)} <span style="color:var(--yellow); font-weight:600;">· ${escapeHtml(s.category || 'Community')}</span></div>
+          <div style="font-size:11px; color:var(--text-dim); word-break:break-all;">${escapeHtml(s.link)}</div>
+          <div style="font-size:12px; color:var(--text-dim); margin:4px 0;">${escapeHtml(s.description)}</div>
+          <div style="font-size:11px; color:var(--text-dim);">from ${escapeHtml(s.submitterEmail)}</div>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn primary" data-accept="${r.key}" style="font-size:12px; padding:5px 12px;">Accept</button>
+            <button class="btn ghost" data-deny="${r.key}" style="font-size:12px; padding:5px 12px; color:var(--pink); border-color:var(--pink);">Deny</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  el.querySelectorAll('[data-accept]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.dataset.accept;
+      const rec = await sGet(key);
+      if(!rec) return;
+      rec.status = 'approved';
+      await sSet(key, rec);
+      await refreshAdminSubs();
+      await refreshAdminGames();
+      await loadCommunityGames();
+      renderGrid();
+    };
+  });
+  el.querySelectorAll('[data-deny]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.dataset.deny;
+      const rec = await sGet(key);
+      if(!rec) return;
+      rec.status = 'denied';
+      await sSet(key, rec);
+      await refreshAdminSubs();
+    };
+  });
+}
+
+async function refreshAdminList(){
+  const listEl = document.getElementById('adminList');
+  if(!listEl) return;
+  let keys = [];
+  try{
+    const res = await sList('rumpus:user:');
+    keys = res ? res.keys : [];
+  }catch(e){ listEl.innerHTML = '<p class="sub">Could not load accounts.</p>'; return; }
+
+  if(keys.length === 0){ listEl.innerHTML = '<p class="sub">No accounts found.</p>'; return; }
+
+  const records = await Promise.all(keys.map(async k => ({ key:k, data: await sGet(k) })));
+  listEl.innerHTML = records.filter(r=>r.data).map(r => {
+    const u = r.data;
+    const isSelf = currentUser && u.username.toLowerCase() === currentUser.username.toLowerCase();
+    return `
+      <div class="lb-row" style="align-items:center;">
+        <span>${escapeHtml(u.username)}${u.isAdmin || u.email===ADMIN_EMAIL ? ' 👑' : ''}<br><span style="color:var(--text-dim); font-size:11px;">${escapeHtml(u.email||'no email on file')}</span></span>
+        <button class="btn ghost" data-del="${r.key}" style="color:var(--pink); border-color:var(--pink); font-size:12px; padding:5px 10px;">${isSelf ? 'Delete (you)' : 'Delete'}</button>
+      </div>`;
+  }).join('');
+
+  listEl.querySelectorAll('[data-del]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.dataset.del;
+      const uname = key.replace('rumpus:user:','');
+      if(!confirm(`Permanently delete the account "${uname}"? This can't be undone.`)) return;
+      try{
+        await sDelete(key);
+        if(currentUser && key === 'rumpus:user:' + currentUser.username.toLowerCase()){
+          logout();
+          document.getElementById('authOverlay').classList.add('hidden');
+          return;
+        }
+        await refreshAdminList();
+      }catch(e){ alert('Could not delete that account. Try again.'); }
+    };
+  });
+}
+
+/* ======================= profile: full-screen page ======================= */
+let profileTab = 'overview';
+const PROFILE_TABS = { overview:'Overview', liked:'Liked games', leaderboard:'Leaderboard', settings:'Settings' };
+
+function persistUser(){
+  if(!currentUser) return Promise.resolve(null);
+  return sSet('rumpus:user:' + currentUser.username.toLowerCase(), currentUser);
+}
+
+// "Progress" = combined activity across every game. Rumpus can't see inside games hosted elsewhere,
+// so points come from what it CAN measure: games tried, plays, time spent, likes and ratings given.
+function computePoints(user){
+  const a = user.activity || {};
+  const plays = a.plays || {};
+  const seconds = a.seconds || {};
+  const gamesPlayed = Object.keys(plays).length;
+  const totalPlays = Object.values(plays).reduce((sum, n) => sum + n, 0);
+  const minutes = Math.floor(Object.values(seconds).reduce((sum, n) => sum + n, 0) / 60);
+  const likes = Object.values(user.votes || {}).filter(v => v === 'like').length;
+  const ratings = Object.values(user.ratings || {}).filter(n => n > 0).length;
+  const points = gamesPlayed*25 + totalPlays*10 + minutes*2 + likes*5 + ratings*5;
+  return { points, gamesPlayed, totalPlays, minutes, likes, ratings };
+}
+
+async function loadLeaderboard(){
+  const res = await sList('rumpus:user:');
+  const keys = res ? res.keys : [];
+  let users = (await Promise.all(keys.map(k => sGet(k)))).filter(Boolean);
+  users = users.map(u => (currentUser && u.username.toLowerCase() === currentUser.username.toLowerCase()) ? currentUser : u);
+  const rows = users.map(u => ({ user:u, ...computePoints(u) }));
+  rows.sort((a, b) => b.points - a.points || a.user.username.localeCompare(b.user.username));
+  rows.forEach((r, i) => { r.rank = (i > 0 && rows[i-1].points === r.points) ? rows[i-1].rank : i + 1; });
+  return rows;
+}
+
+function resizeImageToDataUrl(file, size){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function thumbHtml(g){
+  if(g.thumbnail){
+    return g.thumbnail.startsWith('data:video')
+      ? `<video src="${g.thumbnail}" style="width:100%;height:100%;object-fit:cover;" muted loop autoplay playsinline></video>`
+      : `<img src="${g.thumbnail}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
+  }
+  return g.icon;
+}
+
+async function openProfile(tab){
+  if(!currentUser) return;
+  profileTab = (typeof tab === 'string') ? tab : 'overview';
+  document.getElementById('profileView').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  await renderProfileView();
+}
+function closeProfile(){
+  document.getElementById('profileView').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && !document.getElementById('profileView').classList.contains('hidden')
+     && document.getElementById('gameOverlay').classList.contains('hidden')
+     && document.getElementById('authOverlay').classList.contains('hidden')){
+    closeProfile();
+  }
+});
+
+async function renderProfileView(){
+  if(!currentUser) return;
+  const el = document.getElementById('profileViewBody');
+  const board = await loadLeaderboard();
+  const me = board.find(r => r.user.username.toLowerCase() === currentUser.username.toLowerCase());
+  const mine = computePoints(currentUser);
+  const myRank = me ? me.rank : null;
+
+  el.innerHTML = `
+    <button class="btn ghost" id="pvBack">← Back to Rumpus</button>
+    <div class="pv-top">
+      ${avatarHtml(currentUser, 96)}
+      <div class="pv-id">
+        <h1>${escapeHtml(currentUser.username)}</h1>
+        <div class="pv-sub">${escapeHtml(currentUser.email || '')} · Joined ${new Date(currentUser.joined || Date.now()).toLocaleDateString()}</div>
+      </div>
+      <div class="pv-chips">
+        <div class="pv-chip"><b>${mine.points.toLocaleString()}</b><span>points</span></div>
+        <div class="pv-chip"><b>${myRank ? '#' + myRank : '—'}</b><span>rank</span></div>
+      </div>
+    </div>
+    <div class="pv-tabs">
+      ${Object.keys(PROFILE_TABS).map(t => `<button class="pv-tab ${t === profileTab ? 'active' : ''}" data-tab="${t}">${PROFILE_TABS[t]}</button>`).join('')}
+    </div>
+    <div id="pvContent"></div>
+  `;
+  document.getElementById('pvBack').onclick = closeProfile;
+  el.querySelectorAll('.pv-tab').forEach(btn => {
+    btn.onclick = () => { profileTab = btn.dataset.tab; renderProfileView(); };
+  });
+
+  const content = document.getElementById('pvContent');
+  if(profileTab === 'overview') await renderProfileOverview(content, mine);
+  else if(profileTab === 'liked') renderProfileLiked(content);
+  else if(profileTab === 'leaderboard') renderProfileLeaderboard(content, board, me, mine);
+  else renderProfileSettings(content);
+}
+
+async function renderProfileOverview(content, mine){
+  const allGames = [...GAMES, ...communityGames];
+  const a = currentUser.activity || {};
+  const recents = await getRecentlyPlayed();
+  const ids = Array.from(new Set([...Object.keys(a.plays || {}), ...recents.map(r => r.id)]));
+  const rows = ids.map(id => {
+    const g = allGames.find(x => x.id === id);
+    if(!g) return '';
+    const plays = (a.plays || {})[id] || 0;
+    const mins = Math.floor(((a.seconds || {})[id] || 0) / 60);
+    const vote = (currentUser.votes || {})[id];
+    const rating = (currentUser.ratings || {})[id];
+    return `<div class="pv-row"><span>${g.icon} ${escapeHtml(g.name)}</span><span class="pv-dim">${plays} play${plays !== 1 ? 's' : ''} · ${mins} min · ${vote === 'like' ? '👍' : (vote === 'dislike' ? '👎' : '—')} · ${rating ? '★'.repeat(rating) : '—'}</span></div>`;
+  }).filter(Boolean).join('');
+
+  content.innerHTML = `
+    <div class="pv-stats">
+      <div class="pv-stat"><b>${mine.gamesPlayed}</b><span>Games played</span></div>
+      <div class="pv-stat"><b>${mine.totalPlays}</b><span>Total plays</span></div>
+      <div class="pv-stat"><b>${mine.minutes}</b><span>Minutes played</span></div>
+      <div class="pv-stat"><b>${mine.likes}</b><span>Games liked</span></div>
+    </div>
+    <div class="pv-section">
+      <h3>Your games</h3>
+      ${rows || '<p class="pv-dim">Nothing played yet — open a game and it\'ll show up here.</p>'}
+    </div>
+    <p class="pv-note">Points: 25 for each new game you try, 10 per play, 2 per minute played, 5 per like, and 5 per rating.</p>
+  `;
+}
+
+function renderProfileLiked(content){
+  const allGames = [...GAMES, ...communityGames];
+  const votes = currentUser.votes || {};
+  const liked = allGames.filter(g => votes[g.id] === 'like');
+  if(liked.length === 0){
+    content.innerHTML = '<div class="empty">You haven\'t liked any games yet — press 👍 on a game and it\'ll be saved here.</div>';
+    return;
+  }
+  content.innerHTML = `<div class="grid">${liked.map(g => `
+    <div class="card" data-id="${g.id}" style="cursor:pointer;">
+      <div class="notch"></div>
+      <div class="thumb" style="background:${g.color}22; overflow:hidden;">${thumbHtml(g)}</div>
+      <div class="card-body">
+        <h3>${escapeHtml(g.name)}</h3>
+        <div class="card-tag">${escapeHtml(g.cat)}</div>
+        <div class="card-foot"><span class="best">👍 Liked</span><span class="play-btn">${g.external ? 'Open' : 'Play'}</span></div>
+      </div>
+    </div>`).join('')}</div>`;
+  content.querySelectorAll('.card').forEach(card => {
+    const g = allGames.find(x => x.id === card.dataset.id);
+    card.onclick = () => { g.external ? openExternalGame(g) : openGame(g.id); };
+  });
+}
+
+function renderProfileLeaderboard(content, board, me, mine){
+  const TOP = 25;
+  const rowHtml = (r) => {
+    const isMe = currentUser && r.user.username.toLowerCase() === currentUser.username.toLowerCase();
+    return `<div class="pv-row ${isMe ? 'me' : ''}">
+      <span class="pv-rank">${r.rank <= 3 ? ['🥇','🥈','🥉'][r.rank - 1] : '#' + r.rank}</span>
+      <span class="pv-user">${avatarHtml(r.user, 30)}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHtml(r.user.username)}${isMe ? ' (you)' : ''}</span></span>
+      <span class="pv-dim">${r.gamesPlayed} game${r.gamesPlayed !== 1 ? 's' : ''} · ${r.minutes} min</span>
+      <b style="min-width:70px; text-align:right;">${r.points.toLocaleString()} pts</b>
+    </div>`;
+  };
+  const top = board.slice(0, TOP);
+  const meInTop = me && me.rank <= TOP && top.includes(me);
+  content.innerHTML = `
+    <div class="pv-section">
+      <h3>${me ? `You're #${me.rank} of ${board.length}` : 'Leaderboard'} · ${mine.points.toLocaleString()} points</h3>
+      ${top.map(rowHtml).join('')}
+      ${(me && !meInTop) ? `<div class="pv-dim" style="text-align:center; padding:8px;">···</div>${rowHtml(me)}` : ''}
+    </div>
+    <p class="pv-note">Your place is based on your combined progress across every game you've played: 25 points per new game, 10 per play, 2 per minute played, 5 per like and 5 per rating. Rankings only include accounts created on this browser, since Rumpus doesn't have a shared server yet.</p>
+  `;
+}
+
+function renderProfileSettings(content){
+  content.innerHTML = `
+    <div class="pv-narrow">
+      <div class="pv-section">
+        <h3>Profile picture</h3>
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
+          ${avatarHtml(currentUser, 72)}
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <label class="btn" style="cursor:pointer;">Upload photo<input type="file" id="pfpInput" accept="image/*" style="display:none;"></label>
+            ${currentUser.avatarImage ? '<button class="btn ghost" id="pfpRemove">Remove photo</button>' : ''}
+          </div>
+        </div>
+        <div class="form-msg" id="pfpMsg"></div>
+        <div class="pv-dim" style="margin-bottom:8px;">Or pick an avatar:</div>
+        <div id="avatarPicker" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      </div>
+
+      <div class="pv-section">
+        <h3>Account</h3>
+        <div class="field"><label>Email</label><input id="editEmail" type="email" value="${escapeHtml(currentUser.email || '')}" /></div>
+        <div class="field"><label>Current password</label><input id="editCurPass" type="password" /></div>
+        <div class="field"><label>New password (leave blank to keep current)</label><input id="editNewPass" type="password" /></div>
+        <div class="form-msg" id="editMsg"></div>
+        <button class="btn primary" id="editSave">Save changes</button>
+      </div>
+
+      <div class="pv-section">
+        <h3>${t('language')}</h3>
+        <p class="pv-dim" style="margin-bottom:10px;">Only a few of these have translated interface text so far (marked ✓) — the rest currently show English text until translated.</p>
+        <input id="langSearch" type="text" placeholder="Search languages..." style="width:100%; max-width:320px; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:13px; font-family:inherit; margin-bottom:8px;" />
+        <div id="langList" style="max-width:320px; max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:10px;"></div>
+      </div>
+
+      <div class="pv-section">
+        <button class="btn ghost" id="pvLogout" style="color:var(--pink); border-color:var(--pink);">${t('logout')}</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('pfpInput').onchange = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    const msg = document.getElementById('pfpMsg');
+    if(!file) return;
+    if(!file.type.startsWith('image/')){ msg.textContent = 'Please choose an image file.'; return; }
+    if(file.size > 8 * 1024 * 1024){ msg.textContent = 'That image is too big — please use one under 8MB.'; return; }
+    try{
+      currentUser.avatarImage = await resizeImageToDataUrl(file, 256);
+      await persistUser();
+      renderAuthArea();
+      renderProfileView();
+    }catch(err){ msg.textContent = 'Couldn\'t read that image — try a different file.'; }
+  };
+  const rm = document.getElementById('pfpRemove');
+  if(rm) rm.onclick = async () => {
+    delete currentUser.avatarImage;
+    await persistUser();
+    renderAuthArea();
+    renderProfileView();
+  };
+
+  const picker = document.getElementById('avatarPicker');
+  AVATAR_EMOJIS.forEach((emoji, i) => {
+    const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    const isCurrent = !currentUser.avatarImage && currentUser.avatar && currentUser.avatar.emoji === emoji && currentUser.avatar.color === color;
+    const btn = document.createElement('button');
+    btn.textContent = emoji;
+    btn.style.cssText = `width:38px; height:38px; border-radius:50%; border:2px solid ${isCurrent ? 'var(--yellow)' : 'transparent'}; background:${color}; font-size:17px; display:flex; align-items:center; justify-content:center;`;
+    btn.onclick = async () => {
+      currentUser.avatar = { emoji, color };
+      delete currentUser.avatarImage;
+      await persistUser();
+      renderAuthArea();
+      renderProfileView();
+    };
+    picker.appendChild(btn);
+  });
+
+  document.getElementById('editSave').onclick = async () => {
+    const email = document.getElementById('editEmail').value.trim();
+    const curPass = document.getElementById('editCurPass').value;
+    const newPass = document.getElementById('editNewPass').value;
+    const msg = document.getElementById('editMsg');
+    msg.style.color = '';
+    if(!email || !/^\S+@\S+\.\S+$/.test(email)){ msg.textContent = 'Enter a valid email.'; return; }
+    if(!curPass){ msg.textContent = 'Enter your current password to save changes.'; return; }
+    if(curPass !== currentUser.password){ msg.textContent = 'Current password is incorrect.'; return; }
+    if(newPass && newPass.length < 6){ msg.textContent = 'New password needs at least 6 characters.'; return; }
+    currentUser.email = email.toLowerCase();
+    if(newPass) currentUser.password = newPass;
+    currentUser.isAdmin = !!(currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL);
+    await persistUser();
+    msg.style.color = 'var(--mint)';
+    msg.textContent = 'Saved!';
+    renderAuthArea();
+    document.getElementById('editCurPass').value = '';
+    document.getElementById('editNewPass').value = '';
+  };
+  document.getElementById('pvLogout').onclick = async () => { closeProfile(); await logout(); };
+  function renderLangList(filter){
+    const listEl = document.getElementById('langList');
+    const q = (filter || '').trim().toLowerCase();
+    const matches = q ? LANGUAGES.filter(l => l.label.toLowerCase().includes(q) || l.code.includes(q) || (l.en && l.en.toLowerCase().includes(q))) : LANGUAGES;
+    if(matches.length === 0){
+      listEl.innerHTML = '<div class="pv-dim" style="padding:14px; text-align:center;">No languages match that search.</div>';
+      return;
+    }
+    listEl.innerHTML = matches.map(l => {
+      const hasTranslation = !!(STRINGS[l.code]);
+      const isCurrent = l.code === currentLang;
+      return `<button class="side-item lang-option" data-lang="${l.code}" style="width:100%; padding:9px 14px; opacity:1; color:${isCurrent ? 'var(--text)' : 'var(--text-dim)'}; background:${isCurrent ? 'var(--surface-hi)' : 'none'}; border-bottom:1px solid var(--line);">
+        <span class="label" style="opacity:1;">${escapeHtml(l.label)}${hasTranslation ? ' <span style="color:var(--mint);">✓</span>' : ''}</span>
+      </button>`;
+    }).join('');
+    listEl.querySelectorAll('.lang-option').forEach(btn => {
+      btn.onclick = async () => { await applyLanguage(btn.dataset.lang); renderProfileView(); };
+    });
+  }
+  renderLangList('');
+  document.getElementById('langSearch').addEventListener('input', (e) => renderLangList(e.target.value));
+}
+
+function formatScore(gameId, v){
+  if(v === undefined || v === null) return '—';
+  if(gameId === 'match') return `${v.score} pts (${v.moves} moves)`;
+  if(gameId === 'tictac') return `${v.wins}W / ${v.losses}L / ${v.draws}D`;
+  if(gameId === 'wordy') return `${v}/6 guesses`;
+  if(gameId === 'orbit') return `${v}s`;
+  return String(v);
+}
+
+/* ======================= category pills ======================= */
+function renderPills(){
+  const bar = document.getElementById('pillbar');
+  bar.innerHTML = CATEGORIES.map(c =>
+    `<button class="pill ${c===activeCategory && viewMode==='home' ? 'active':''}" data-cat="${c}">${t(CATEGORY_KEYS[c] || c)}</button>`
+  ).join('');
+  bar.querySelectorAll('.pill').forEach(p => {
+    p.onclick = () => { setCategory(p.dataset.cat); };
+  });
+  document.querySelectorAll('.side-item[data-cat]').forEach(btn => {
+    btn.classList.toggle('active', viewMode==='home' && btn.dataset.cat === activeCategory);
+  });
+  document.querySelectorAll('.side-item[data-view]').forEach(btn => {
+    const v = btn.dataset.view;
+    const isActive = v === 'home' ? (viewMode === 'home' && activeCategory === 'All') : (v === viewMode);
+    btn.classList.toggle('active', isActive);
+  });
+}
+function setCategory(cat){
+  activeCategory = cat;
+  viewMode = 'home';
+  renderPills();
+  renderGrid();
+}
+function setView(view){
+  viewMode = view;
+  activeCategory = 'All';
+  renderPills();
+  renderGrid();
+}
+document.querySelectorAll('.side-item[data-cat]').forEach(btn => {
+  btn.onclick = () => setCategory(btn.dataset.cat);
+});
+document.querySelectorAll('.side-item[data-view]').forEach(btn => {
+  btn.onclick = () => setView(btn.dataset.view);
+});
+document.getElementById('sideSubmit').onclick = () => openSubmitForm();
+
+/* ======================= game grid ======================= */
+async function loadCommunityGames(){
+  try{
+    const res = await sList('rumpus:submission:');
+    const keys = res ? res.keys : [];
+    const records = await Promise.all(keys.map(k => sGet(k)));
+    communityGames = records.filter(r => r && r.status === 'approved').map(r => ({
+      id: r.id, name: r.title, cat: r.category || 'Community', icon: '🎮', color: '#57e3b0',
+      desc: r.description, playable: true, external: true, link: r.link, thumbnail: r.thumbnail,
+      createdAt: r.createdAt || 0
+    }));
+  }catch(e){ communityGames = []; }
+}
+
+function recentlyPlayedKey(){
+  return currentUser ? ('rumpus:recentlyPlayed:' + currentUser.username.toLowerCase()) : 'rumpus:recentlyPlayed:guest';
+}
+async function getRecentlyPlayed(){
+  return (await sGet(recentlyPlayedKey())) || [];
+}
+async function trackPlayed(gameId){
+  const storeKey = recentlyPlayedKey();
+  let list = (await sGet(storeKey)) || [];
+  list = list.filter(r => r.id !== gameId);
+  list.unshift({ id: gameId, ts: Date.now() });
+  if(list.length > 50) list = list.slice(0, 50);
+  await sSet(storeKey, list);
+}
+
+const VIEW_TITLES = { home:'All games', new:'New', popular:'Popular Games', recent:'Recently played', leaderboards:'Leaderboards', updated:'Updated' };
+let renderToken = 0;
+
+async function renderGrid(){
+  const myToken = ++renderToken;
+  const grid = document.getElementById('gameGrid');
+  const empty = document.getElementById('emptyState');
+  const allGames = [...GAMES, ...communityGames];
+  let list = allGames.filter(g => activeCategory==='All' || g.cat===activeCategory);
+  if(searchQuery){
+    const q = searchQuery.toLowerCase();
+    list = list.filter(g => g.name.toLowerCase().includes(q) || g.cat.toLowerCase().includes(q));
+  }
+
+  let emptyMsg = t('emptyDefault');
+
+  if(viewMode === 'new'){
+    list = [...list].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  } else if(viewMode === 'popular' || viewMode === 'leaderboards'){
+    const withPlays = await Promise.all(list.map(async g => {
+      const stats = await sGet('rumpus:stats:' + g.id);
+      return { ...g, _plays: stats ? stats.plays||0 : 0 };
+    }));
+    if(myToken !== renderToken) return; // a newer render started while we were waiting — discard this one
+    list = withPlays.sort((a,b) => b._plays - a._plays);
+  } else if(viewMode === 'recent'){
+    const recents = await getRecentlyPlayed();
+    if(myToken !== renderToken) return;
+    const order = {}; recents.forEach((r,i) => order[r.id] = i);
+    list = list.filter(g => order[g.id] !== undefined).sort((a,b) => order[a.id] - order[b.id]);
+    emptyMsg = t('emptyRecent');
+  } else if(viewMode === 'updated'){
+    // No edit-history tracking yet, so this currently mirrors the full library.
+    list = [...list].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  } else {
+    // Default browsing (Home, or any category): newest first instead of raw insertion order.
+    list = [...list].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  }
+  if(myToken !== renderToken) return;
+
+  document.getElementById('gridTitle').textContent = viewMode !== 'home' ? VIEW_TITLES[viewMode] : (activeCategory === 'All' ? t('allGames') : t(CATEGORY_KEYS[activeCategory] || activeCategory));
+  document.getElementById('gridCount').textContent = `${list.length} game${list.length!==1?'s':''}`;
+
+  if(list.length === 0){
+    grid.innerHTML = '';
+    empty.textContent = emptyMsg;
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  grid.innerHTML = list.map(g => {
+    const best = currentUser && !g.external ? formatScore(g.id, (currentUser.scores||{})[g.id]) : null;
+    const isVideo = g.thumbnail && g.thumbnail.startsWith('data:video');
+    const thumbInner = g.thumbnail
+      ? (isVideo
+          ? `<video src="${g.thumbnail}" style="width:100%;height:100%;object-fit:cover;" muted loop autoplay playsinline></video>`
+          : `<img src="${g.thumbnail}" alt="" style="width:100%;height:100%;object-fit:cover;">`)
+      : g.icon;
+    const isNew = g.createdAt && (Date.now() - g.createdAt) < 7*24*60*60*1000;
+    const playsBadge = (viewMode==='popular' || viewMode==='leaderboards') ? `<span class="best">${(g._plays||0).toLocaleString()} plays</span>` : `<span class="best">${best ? best : ''}</span>`;
+    return `
+    <div class="card ${g.playable?'':'soon'}" data-id="${g.id}">
+      <div class="notch"></div>
+      ${isNew ? '<div style="position:absolute; top:8px; left:8px; z-index:2; background:var(--mint); color:#0d1f1a; font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px;">NEW</div>' : ''}
+      <div class="thumb" style="background:${g.color}22; overflow:hidden;">${thumbInner}</div>
+      <div class="card-body">
+        <h3>${escapeHtml(g.name)}</h3>
+        <div class="card-tag">${g.cat}${g.playable ? '' : ' · Coming soon'}${g.external ? ' · Community' : ''}</div>
+        <div class="card-foot">
+          ${playsBadge}
+          <span class="play-btn">${g.playable ? (g.external ? 'Open' : 'Play') : 'Soon'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.card').forEach(card => {
+    const g = allGames.find(x => x.id === card.dataset.id);
+    if(!g.playable) return;
+    card.onclick = () => { g.external ? openExternalGame(g) : openGame(g.id); };
+  });
+}
+
+/* ======================= score saving ======================= */
+async function saveScore(gameId, value){
+  if(!currentUser) return; // guests can play, just not save
+  const key = 'rumpus:user:' + currentUser.username.toLowerCase();
+  currentUser.scores = currentUser.scores || {};
+  const prev = currentUser.scores[gameId];
+  let better = true;
+  if(gameId === 'match' && prev) better = value.score > prev.score;
+  else if(gameId === 'tictac' && prev){ /* always merge, handled by caller */ }
+  else if(prev !== undefined && typeof value === 'number') better = value > prev;
+
+  if(gameId === 'tictac'){
+    const cur = prev || { wins:0, losses:0, draws:0 };
+    cur[value] = (cur[value]||0) + 1;
+    currentUser.scores[gameId] = cur;
+  } else if(gameId === 'wordy'){
+    if(prev === undefined || value < prev) currentUser.scores[gameId] = value;
+  } else if(better || prev === undefined){
+    currentUser.scores[gameId] = value;
+  }
+  await sSet(key, currentUser);
+  renderGrid();
+}
+
+/* ======================= submit-a-game flow ======================= */
+function openSubmitForm(){
+  document.getElementById('submitOverlay').classList.remove('hidden');
+  const body = document.getElementById('submitModalBody');
+  body.innerHTML = `
+    <h2>Submit your game</h2>
+    <p class="sub">Send your game to Rumpus for review. If approved, it'll appear under its category for everyone to play.</p>
+    <div class="field"><label>Title</label><input id="subTitle" type="text" maxlength="60" /></div>
+    <div class="field"><label>Category</label>
+      <select id="subCategory" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:14px; font-family:inherit;">
+        <option value="" disabled selected>Choose a category…</option>
+        ${GENRE_OPTIONS.map(c => `<option value="${c}">${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Link to play</label><input id="subLink" type="url" placeholder="https://..." /></div>
+    <div class="field"><label>Thumbnail (optional image, GIF, or short video)</label><input id="subThumb" type="file" accept="image/*,video/mp4,video/webm" /></div>
+    <div class="field"><label>Description</label><textarea id="subDesc" rows="3" maxlength="300" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:14px; font-family:inherit; resize:vertical;"></textarea></div>
+    <div class="field"><label>Your contact email</label><input id="subEmail" type="email" value="${currentUser && currentUser.email ? escapeHtml(currentUser.email) : ''}" /></div>
+    <div class="form-msg" id="subMsg"></div>
+    <button class="btn primary" style="width:100%" id="subSubmit">Send for review</button>
+  `;
+  document.getElementById('subSubmit').onclick = handleSubmitGame;
+}
+
+async function handleSubmitGame(){
+  const title = document.getElementById('subTitle').value.trim();
+  const category = document.getElementById('subCategory').value;
+  const link = document.getElementById('subLink').value.trim();
+  const desc = document.getElementById('subDesc').value.trim();
+  const email = document.getElementById('subEmail').value.trim();
+  const fileInput = document.getElementById('subThumb');
+  const msg = document.getElementById('subMsg');
+
+  if(!title || !category || !link || !desc || !email){ msg.textContent = 'Please fill in title, category, link, description, and your email.'; return; }
+  if(!/^https?:\/\//i.test(link)){ msg.textContent = 'Link should start with http:// or https://'; return; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ msg.textContent = 'Enter a valid contact email.'; return; }
+
+  const btn = document.getElementById('subSubmit');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const finish = async (thumbnailDataUrl) => {
+    const id = 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    const record = {
+      id, title, category, link, description: desc, thumbnail: thumbnailDataUrl || null,
+      submitterEmail: email, submitterUsername: currentUser ? currentUser.username : null,
+      status: 'pending', createdAt: Date.now()
+    };
+    const ok = await sSet('rumpus:submission:' + id, record);
+    if(!ok){ msg.textContent = 'Something went wrong saving your submission. Try again.'; btn.disabled=false; btn.textContent='Send for review'; return; }
+
+    // Automatic email notification — no manual send step, fires silently in the background.
+    let emailSent = false;
+    if(FORMSPREE_ENDPOINT){
+      try{
+        const res = await fetch(FORMSPREE_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            _subject: `Rumpus game submission: ${title}`,
+            title, link, description: desc,
+            submitterEmail: email,
+            submitterUsername: currentUser ? currentUser.username : 'guest'
+          })
+        });
+        emailSent = res.ok;
+      }catch(e){ emailSent = false; }
+    }
+
+    document.getElementById('submitModalBody').innerHTML = `
+      <h2>Submitted!</h2>
+      <p class="sub">${emailSent
+        ? 'Your game is saved for review, and the admin has been notified automatically. You\'ll see it appear here once it\'s accepted.'
+        : 'Your game is saved for review. You\'ll see it appear here once it\'s accepted.'}</p>
+      <button class="btn primary" style="width:100%" id="subDone">Done</button>
+    `;
+    document.getElementById('subDone').onclick = () => document.getElementById('submitOverlay').classList.add('hidden');
+  };
+
+  const file = fileInput.files && fileInput.files[0];
+  if(file){
+    if(file.size > 3000000){ msg.textContent = 'That file is a bit large — please use something under ~3MB (smaller for images).'; btn.disabled=false; btn.textContent='Send for review'; return; }
+    const reader = new FileReader();
+    reader.onload = () => finish(reader.result);
+    reader.onerror = () => finish(null);
+    reader.readAsDataURL(file);
+  } else {
+    finish(null);
+  }
+}
+
+document.getElementById('submitGameBtn').onclick = openSubmitForm;
+document.getElementById('submitOverlay').addEventListener('click', e => { if(e.target.id==='submitOverlay') e.currentTarget.classList.add('hidden'); });
+
+/* ======================= game toolbar: fullscreen / like / dislike / plays ======================= */
+async function renderGameToolbar(containerEl, gameId, stageEl){
+  const key = 'rumpus:stats:' + gameId;
+  const stats = Object.assign({ likes:0, dislikes:0, plays:0, myVote:null, ratingSum:0, ratingCount:0, myRating:0 }, (await sGet(key)) || {});
+
+  // Votes and ratings belong to the logged-in account (guests fall back to this browser).
+  if(currentUser){
+    currentUser.votes = currentUser.votes || {};
+    currentUser.ratings = currentUser.ratings || {};
+    // Adopt any older browser-level vote/rating once, so it isn't counted twice.
+    if(currentUser.votes[gameId] === undefined && stats.myVote){ currentUser.votes[gameId] = stats.myVote; stats.myVote = null; }
+    if(currentUser.ratings[gameId] === undefined && stats.myRating){ currentUser.ratings[gameId] = stats.myRating; stats.myRating = 0; }
+  }
+  const getVote = () => currentUser ? (currentUser.votes[gameId] || null) : stats.myVote;
+  const setVote = (v) => { if(currentUser){ if(v) currentUser.votes[gameId] = v; else delete currentUser.votes[gameId]; } else stats.myVote = v; };
+  const getRating = () => currentUser ? (currentUser.ratings[gameId] || 0) : stats.myRating;
+  const setRating = (n) => { if(currentUser){ if(n) currentUser.ratings[gameId] = n; else delete currentUser.ratings[gameId]; } else stats.myRating = n; };
+  const save = async () => { await sSet(key, stats); await persistUser(); };
+
+  stats.plays = (stats.plays || 0) + 1;
+  await save();
+
+  function starsRow(){
+    const avg = stats.ratingCount ? (stats.ratingSum / stats.ratingCount) : 0;
+    const mine = getRating();
+    let html = '<div style="display:flex; align-items:center; gap:3px;">';
+    for(let i = 1; i <= 5; i++){
+      html += `<button class="gt-star" data-star="${i}" style="background:none; border:none; font-size:16px; padding:2px; color:${i <= mine ? 'var(--yellow)' : 'var(--text-dim)'};">★</button>`;
+    }
+    html += `</div><span style="font-size:11px; color:var(--text-dim);">${stats.ratingCount ? avg.toFixed(1) + ' (' + stats.ratingCount + ')' : 'No ratings yet'}</span>`;
+    return html;
+  }
+
+  function draw(){
+    const vote = getVote();
+    containerEl.innerHTML = `
+      <div class="gt-left">
+        <button class="gt-btn ${vote === 'like' ? 'active' : ''}" id="gtLike">👍 <span>${stats.likes}</span></button>
+        <button class="gt-btn ${vote === 'dislike' ? 'active' : ''}" id="gtDislike">👎 <span>${stats.dislikes}</span></button>
+        <button class="gt-btn" id="gtFullscreen">⛶ Fullscreen</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        ${starsRow()}
+        <span class="gt-plays">${stats.plays.toLocaleString()} play${stats.plays !== 1 ? 's' : ''}</span>
+      </div>
+    `;
+    document.getElementById('gtLike').onclick = async () => {
+      const cur = getVote();
+      if(cur === 'like'){ stats.likes--; setVote(null); }
+      else { if(cur === 'dislike') stats.dislikes--; stats.likes++; setVote('like'); }
+      await save(); draw();
+    };
+    document.getElementById('gtDislike').onclick = async () => {
+      const cur = getVote();
+      if(cur === 'dislike'){ stats.dislikes--; setVote(null); }
+      else { if(cur === 'like') stats.likes--; stats.dislikes++; setVote('dislike'); }
+      await save(); draw();
+    };
+    document.getElementById('gtFullscreen').onclick = () => {
+      const req = stageEl.requestFullscreen || stageEl.webkitRequestFullscreen || stageEl.msRequestFullscreen;
+      if(req) req.call(stageEl);
+    };
+    containerEl.querySelectorAll('.gt-star').forEach(btn => {
+      btn.onclick = async () => {
+        const val = parseInt(btn.dataset.star, 10);
+        const prev = getRating();
+        if(prev){ stats.ratingSum -= prev; stats.ratingCount -= 1; }
+        if(prev === val){ setRating(0); }
+        else { setRating(val); stats.ratingSum += val; stats.ratingCount += 1; }
+        await save(); draw();
+      };
+    });
+  }
+  draw();
+}
+
+// Account-level activity (feeds the leaderboard): plays per game and time spent with a game open.
+function recordAccountPlay(gameId){
+  if(!currentUser) return;
+  currentUser.activity = currentUser.activity || {};
+  currentUser.activity.plays = currentUser.activity.plays || {};
+  currentUser.activity.seconds = currentUser.activity.seconds || {};
+  currentUser.activity.plays[gameId] = (currentUser.activity.plays[gameId] || 0) + 1;
+  persistUser();
+}
+let playSession = null;
+function startPlaySession(gameId){
+  endPlaySession();
+  playSession = { id: gameId, start: Date.now() };
+}
+function endPlaySession(){
+  if(!playSession) return;
+  const id = playSession.id;
+  const secs = Math.min(Math.round((Date.now() - playSession.start) / 1000), 2 * 60 * 60);
+  playSession = null;
+  if(!currentUser || secs < 1) return;
+  currentUser.activity = currentUser.activity || {};
+  currentUser.activity.plays = currentUser.activity.plays || {};
+  currentUser.activity.seconds = currentUser.activity.seconds || {};
+  currentUser.activity.seconds[id] = (currentUser.activity.seconds[id] || 0) + secs;
+  persistUser();
+}
+window.addEventListener('beforeunload', endPlaySession);
+
+function closeGameOverlay(){
+  endPlaySession();
+  stopAllLoops();
+  document.getElementById('gameModalBody').innerHTML = ''; // unloads the embedded game so it stops playing
+  document.getElementById('gameOverlay').classList.add('hidden');
+}
+
+/* ======================= external (community) game embed ======================= */
+function openExternalGame(g){
+  trackPlayed(g.id);
+  recordAccountPlay(g.id);
+  startPlaySession(g.id);
+  document.getElementById('gameOverlay').classList.remove('hidden');
+  const body = document.getElementById('gameModalBody');
+  body.innerHTML = `
+    <div class="game-head">
+      <div class="gh-title"><span class="icon">${g.icon}</span><h2>${escapeHtml(g.name)}</h2></div>
+    </div>
+    <div class="game-stats"><span>${escapeHtml(g.desc||'')}</span><span><a href="${g.link}" target="_blank" rel="noopener" style="color:var(--mint);">Open in new tab ↗</a></span></div>
+    <div class="game-stage" id="gameStage" style="padding:0; overflow:hidden;">
+      <iframe src="${g.link}" title="${escapeHtml(g.name)}" style="width:100%; height:480px; border:none; border-radius:10px; background:#0a0916;" allow="fullscreen; autoplay; gamepad; accelerometer; gyroscope" allowfullscreen></iframe>
+    </div>
+    <div class="game-toolbar" id="gameToolbar"></div>
+    <div class="game-note">If the game doesn't load here, some sites block embedding — use "Open in new tab" instead.</div>
+  `;
+  renderGameToolbar(document.getElementById('gameToolbar'), g.id, document.getElementById('gameStage'));
+}
+
+/* ======================= game modal shell ======================= */
+function openGame(id){
+  trackPlayed(id);
+  recordAccountPlay(id);
+  startPlaySession(id);
+  const g = GAMES.find(x => x.id === id);
+  document.getElementById('gameOverlay').classList.remove('hidden');
+  const body = document.getElementById('gameModalBody');
+  body.innerHTML = `
+    <div class="game-head">
+      <div class="gh-title"><span class="icon">${g.icon}</span><h2>${g.name}</h2></div>
+    </div>
+    <div class="game-stats" id="gameStats"></div>
+    <div class="game-stage" id="gameStage"></div>
+    <div class="game-toolbar" id="gameToolbar"></div>
+    <div class="game-note" id="gameNote">${g.desc}</div>
+  `;
+  GAME_INIT[id](document.getElementById('gameStage'), document.getElementById('gameStats'));
+  renderGameToolbar(document.getElementById('gameToolbar'), id, document.getElementById('gameStage'));
+}
+
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.onclick = () => {
+    if(btn.dataset.close === 'gameOverlay') closeGameOverlay();
+    else document.getElementById(btn.dataset.close).classList.add('hidden');
+  };
+});
+document.getElementById('authOverlay').addEventListener('click', e => { if(e.target.id==='authOverlay') e.currentTarget.classList.add('hidden'); });
+document.getElementById('gameOverlay').addEventListener('click', e => { if(e.target.id==='gameOverlay') closeGameOverlay(); });
+
+let activeLoops = [];
+function stopAllLoops(){ activeLoops.forEach(id => clearInterval(id)); activeLoops = []; document.removeEventListener('keydown', activeKeyHandler || (()=>{})); }
+let activeKeyHandler = null;
+
+/* ======================= GAME 1: Serpent Loop (snake) ======================= */
+function initSnake(stage, statsEl, isHero){
+  const canvas = document.createElement('canvas');
+  const cell = 16, cols = 15, rows = 15;
+  canvas.width = cols*cell; canvas.height = rows*cell;
+  canvas.style.background = '#0a0916';
+  canvas.style.borderRadius = '10px';
+  stage.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  let snake = [{x:7,y:7}], dir = {x:1,y:0}, nextDir = dir, food = randCell(), score = 0, paused=false, over=false;
+  function randCell(){ return {x: Math.floor(Math.random()*cols), y: Math.floor(Math.random()*rows)}; }
+
+  function draw(){
+    ctx.fillStyle = '#0a0916'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#f2c14e';
+    ctx.fillRect(food.x*cell, food.y*cell, cell-2, cell-2);
+    snake.forEach((s,i) => {
+      ctx.fillStyle = i===0 ? '#57e3b0' : '#3fae8a';
+      ctx.fillRect(s.x*cell, s.y*cell, cell-2, cell-2);
+    });
+    if(statsEl) statsEl.innerHTML = `<span><b>${score}</b> length</span><span>${over?'Game over — press R to restart':(paused?'Paused':'')}</span>`;
+  }
+  function tick(){
+    if(paused || over) return;
+    dir = nextDir;
+    const head = {x: snake[0].x+dir.x, y: snake[0].y+dir.y};
+    if(head.x<0||head.y<0||head.x>=cols||head.y>=rows||snake.some(s=>s.x===head.x&&s.y===head.y)){
+      over = true; draw();
+      if(!isHero) saveScore('snake', score);
+      return;
+    }
+    snake.unshift(head);
+    if(head.x===food.x && head.y===food.y){ score++; food = randCell(); }
+    else snake.pop();
+    draw();
+  }
+  function reset(){ snake=[{x:7,y:7}]; dir={x:1,y:0}; nextDir=dir; food=randCell(); score=0; paused=false; over=false; draw(); }
+
+  const handler = (e) => {
+    if(!stage.isConnected) return;
+    const map = {ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0}};
+    if(map[e.key]){
+      const m = map[e.key];
+      if(!(m.x === -dir.x && m.y === -dir.y)) nextDir = m;
+      e.preventDefault();
+    } else if(e.key === ' '){ paused = !paused; draw(); }
+    else if((e.key==='r'||e.key==='R') && over){ reset(); }
+  };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+  const loop = setInterval(tick, 130);
+  activeLoops.push(loop);
+  draw();
+}
+
+/* ======================= GAME 2: Flip Match ======================= */
+function initMatch(stage, statsEl){
+  const symbols = ['🍄','🍒','⭐','🌙','🍩','🎈','🦊','🐳'];
+  const deck = shuffle([...symbols, ...symbols]);
+  let first=null, second=null, lock=false, moves=0, matched=0, seconds=0;
+
+  const grid = document.createElement('div');
+  grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(4, 64px)'; grid.style.gap='8px';
+  stage.appendChild(grid);
+
+  const timer = setInterval(()=>{ seconds++; updateStats(); }, 1000);
+  activeLoops.push(timer);
+
+  function updateStats(){
+    const score = Math.max(0, 1000 - moves*15 - seconds*4);
+    if(statsEl) statsEl.innerHTML = `<span><b>${moves}</b> moves</span><span><b>${seconds}</b>s</span><span><b>${matched/2|0}/${symbols.length}</b> pairs</span>`;
+    return score;
+  }
+
+  deck.forEach((sym, i) => {
+    const card = document.createElement('button');
+    card.style.cssText = 'width:64px;height:64px;border-radius:10px;border:1px solid #352f57;background:#2a2549;font-size:26px;display:flex;align-items:center;justify-content:center;';
+    card.dataset.sym = sym; card.dataset.state='hidden';
+    card.onclick = () => flip(card);
+    grid.appendChild(card);
+  });
+
+  function flip(card){
+    if(lock || card.dataset.state !== 'hidden') return;
+    card.textContent = card.dataset.sym; card.dataset.state='shown'; card.style.background = '#3a3364';
+    if(!first){ first = card; return; }
+    second = card; moves++; lock = true;
+    if(first.dataset.sym === second.dataset.sym){
+      first.dataset.state='matched'; second.dataset.state='matched';
+      first.style.background = second.style.background = '#1c3d31';
+      matched += 2; first=null; second=null; lock=false;
+      updateStats();
+      if(matched === deck.length){
+        clearInterval(timer);
+        const score = updateStats();
+        stage.querySelectorAll('button').forEach(b=>b.disabled=true);
+        if(statsEl) statsEl.innerHTML += ' — solved!';
+        saveScore('match', { score, moves });
+      }
+    } else {
+      setTimeout(()=>{
+        first.textContent=''; second.textContent='';
+        first.dataset.state='hidden'; second.dataset.state='hidden';
+        first.style.background = second.style.background = '#2a2549';
+        first=null; second=null; lock=false;
+      }, 650);
+    }
+    updateStats();
+  }
+  function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]); }
+  updateStats();
+}
+
+/* ======================= GAME 3: Merge Tiles (2048-style) ======================= */
+function initMerge(stage, statsEl){
+  const size = 4;
+  let board = Array.from({length:size},()=>Array(size).fill(0));
+  let score = 0, over = false;
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:grid; grid-template-columns:repeat(4,64px); grid-template-rows:repeat(4,64px); gap:8px; background:#0a0916; padding:8px; border-radius:10px;';
+  stage.appendChild(wrap);
+  const cells = [];
+  for(let i=0;i<16;i++){
+    const c = document.createElement('div');
+    c.style.cssText = 'border-radius:8px; background:#221e3c; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; color:#f3f1fb;';
+    wrap.appendChild(c); cells.push(c);
+  }
+  const tileColor = v => ({2:'#2a2549',4:'#352f57',8:'#63b3f2',16:'#57e3b0',32:'#f2c14e',64:'#f2884e',128:'#ef6f9e',256:'#a680f2'}[v] || '#f2c14e');
+
+  function addRandom(){
+    const empties = [];
+    for(let r=0;r<size;r++) for(let c=0;c<size;c++) if(board[r][c]===0) empties.push([r,c]);
+    if(empties.length===0) return;
+    const [r,c] = empties[Math.floor(Math.random()*empties.length)];
+    board[r][c] = Math.random() < 0.9 ? 2 : 4;
+  }
+  function render(){
+    let i=0;
+    for(let r=0;r<size;r++) for(let c=0;c<size;c++,i++){
+      const v = board[r][c];
+      cells[i].textContent = v || '';
+      cells[i].style.background = v ? tileColor(v) : '#221e3c';
+    }
+    if(statsEl) statsEl.innerHTML = `<span><b>${score}</b> score</span><span>${over ? 'No moves left — press R to restart' : 'Arrow keys to slide'}</span>`;
+  }
+  function slideRow(row){
+    let vals = row.filter(v=>v!==0);
+    for(let i=0;i<vals.length-1;i++){
+      if(vals[i] === vals[i+1]){ vals[i]*=2; score += vals[i]; vals.splice(i+1,1); }
+    }
+    while(vals.length < size) vals.push(0);
+    return vals;
+  }
+  function rotateBoard(b){ return b[0].map((_,c)=> b.map(row=>row[c]).reverse()); }
+  function move(dir){
+    let b = board.map(r=>[...r]);
+    let rotations = {left:0, up:1, right:2, down:3}[dir];
+    for(let i=0;i<rotations;i++) b = rotateBoard(b);
+    let moved = false;
+    const newB = b.map(row => {
+      const slid = slideRow(row);
+      if(JSON.stringify(slid) !== JSON.stringify(row)) moved = true;
+      return slid;
+    });
+    let result = newB;
+    for(let i=0;i<(4-rotations)%4;i++) result = rotateBoard(result);
+    if(moved){ board = result; addRandom(); }
+    checkOver();
+    render();
+  }
+  function checkOver(){
+    for(let r=0;r<size;r++) for(let c=0;c<size;c++){
+      if(board[r][c]===0) return;
+      if(c<size-1 && board[r][c]===board[r][c+1]) return;
+      if(r<size-1 && board[r][c]===board[r+1][c]) return;
+    }
+    over = true;
+    saveScore('merge', score);
+  }
+  function reset(){ board = Array.from({length:size},()=>Array(size).fill(0)); score=0; over=false; addRandom(); addRandom(); render(); }
+
+  const handler = (e) => {
+    if(!stage.isConnected) return;
+    const map = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
+    if(map[e.key] && !over){ move(map[e.key]); e.preventDefault(); }
+    else if((e.key==='r'||e.key==='R') && over){ reset(); }
+  };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+  reset();
+}
+
+/* ======================= GAME 4: Tic Tac Duel ======================= */
+function initTicTac(stage, statsEl){
+  let board = Array(9).fill(null), gameOver = false;
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:grid; grid-template-columns:repeat(3,80px); grid-template-rows:repeat(3,80px); gap:8px;';
+  stage.appendChild(wrap);
+  const cells = [];
+  for(let i=0;i<9;i++){
+    const c = document.createElement('button');
+    c.style.cssText = 'border-radius:10px; background:#221e3c; border:1px solid #352f57; font-size:30px; font-weight:800; color:#f3f1fb;';
+    c.onclick = () => playerMove(i);
+    wrap.appendChild(c); cells.push(c);
+  }
+  function updateStats(msg){
+    if(statsEl) statsEl.innerHTML = `<span>${msg || 'Your move — you are X'}</span>`;
+  }
+  const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  function winner(b){
+    for(const [a,c,d] of lines) if(b[a] && b[a]===b[c] && b[a]===b[d]) return b[a];
+    return b.every(x=>x) ? 'draw' : null;
+  }
+  function render(){ board.forEach((v,i)=> cells[i].textContent = v || ''); }
+  function playerMove(i){
+    if(gameOver || board[i]) return;
+    board[i] = 'X'; render();
+    const w = winner(board);
+    if(w){ finish(w); return; }
+    setTimeout(cpuMove, 300);
+  }
+  function cpuMove(){
+    const empties = board.map((v,i)=>v?null:i).filter(v=>v!==null);
+    if(empties.length===0) return;
+    // slightly smart: win if possible, block if needed, else random
+    let move = findWinningMove('O') ?? findWinningMove('X') ?? empties[Math.floor(Math.random()*empties.length)];
+    board[move] = 'O'; render();
+    const w = winner(board);
+    if(w) finish(w);
+    else updateStats('Your move — you are X');
+  }
+  function findWinningMove(sym){
+    for(const [a,c,d] of lines){
+      const trio = [a,c,d], vals = trio.map(i=>board[i]);
+      const countSym = vals.filter(v=>v===sym).length, countEmpty = vals.filter(v=>!v).length;
+      if(countSym===2 && countEmpty===1) return trio[vals.findIndex(v=>!v)];
+    }
+    return null;
+  }
+  function finish(w){
+    gameOver = true;
+    let result = w==='draw' ? 'draws' : (w==='X' ? 'wins' : 'losses');
+    updateStats(w==='draw' ? "It's a draw — press R to play again" : (w==='X' ? 'You win! Press R to play again' : 'CPU wins — press R to try again'));
+    saveScore('tictac', result);
+  }
+  function reset(){ board = Array(9).fill(null); gameOver=false; render(); updateStats(); }
+  const handler = (e) => { if((e.key==='r'||e.key==='R') && stage.isConnected) reset(); };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+  reset();
+}
+
+/* ======================= GAME 5: Sky Hopper (flappy-style) ======================= */
+function initHopper(stage, statsEl){
+  const canvas = document.createElement('canvas');
+  canvas.width = 320; canvas.height = 300;
+  canvas.style.background = '#0a0916'; canvas.style.borderRadius='10px';
+  stage.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  let birdY = 140, vel = 0, gravity = 0.35, pipes = [], score = 0, over = false, started=false;
+  const gap = 90, pipeW = 36;
+
+  function spawnPipe(){ const top = 40 + Math.random()*130; pipes.push({x: canvas.width, top, passed:false}); }
+  function reset(){ birdY=140; vel=0; pipes=[]; score=0; over=false; started=false; spawnPipe(); draw(); }
+
+  function flap(){
+    if(over){ reset(); return; }
+    started = true;
+    vel = -6.2;
+  }
+  canvas.addEventListener('mousedown', flap);
+  canvas.addEventListener('touchstart', (e)=>{ e.preventDefault(); flap(); });
+  const handler = (e) => { if(e.key===' '){ e.preventDefault(); flap(); } };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+
+  function tick(){
+    if(!started || over){ draw(); return; }
+    vel += gravity; birdY += vel;
+    pipes.forEach(p => p.x -= 2.6);
+    if(pipes.length && pipes[0].x < -pipeW) pipes.shift();
+    if(pipes.length && pipes[pipes.length-1].x < canvas.width - 170) spawnPipe();
+    pipes.forEach(p => {
+      if(!p.passed && p.x + pipeW < 60){ p.passed = true; score++; }
+      const birdX = 60;
+      if(birdX+10 > p.x && birdX-10 < p.x+pipeW){
+        if(birdY-10 < p.top || birdY+10 > p.top+gap) endGame();
+      }
+    });
+    if(birdY > canvas.height-8 || birdY < 0) endGame();
+    draw();
+  }
+  function endGame(){
+    if(over) return;
+    over = true;
+    saveScore('hopper', score);
+  }
+  function draw(){
+    ctx.fillStyle = '#0a0916'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#2a2549';
+    pipes.forEach(p => {
+      ctx.fillRect(p.x, 0, pipeW, p.top);
+      ctx.fillRect(p.x, p.top+gap, pipeW, canvas.height - p.top - gap);
+    });
+    ctx.fillStyle = '#f2c14e';
+    ctx.beginPath(); ctx.arc(60, birdY, 10, 0, Math.PI*2); ctx.fill();
+    if(statsEl) statsEl.innerHTML = `<span><b>${score}</b> pipes</span><span>${over ? 'Crashed — click/space to retry' : (started ? '' : 'Click or press space to start')}</span>`;
+  }
+  const loop = setInterval(tick, 20);
+  activeLoops.push(loop);
+  draw();
+}
+
+/* ======================= GAME 6: Bug Squash ======================= */
+function initSquash(stage, statsEl){
+  let score = 0, timeLeft = 30, running = true;
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:grid; grid-template-columns:repeat(3,84px); grid-template-rows:repeat(3,84px); gap:10px;';
+  stage.appendChild(wrap);
+  const holes = [];
+  for(let i=0;i<9;i++){
+    const h = document.createElement('button');
+    h.style.cssText = 'border-radius:50%; background:#221e3c; border:2px solid #352f57; font-size:32px;';
+    h.onclick = () => { if(h.dataset.active === '1' && running){ score++; h.dataset.active='0'; h.textContent=''; updateStats(); } };
+    wrap.appendChild(h); holes.push(h);
+  }
+  function updateStats(){
+    if(statsEl) statsEl.innerHTML = `<span><b>${score}</b> squashed</span><span><b>${timeLeft}</b>s left</span>`;
+  }
+  function popRandom(){
+    if(!running) return;
+    holes.forEach(h => { h.dataset.active='0'; h.textContent=''; });
+    const h = holes[Math.floor(Math.random()*holes.length)];
+    h.dataset.active = '1'; h.textContent = '🐛';
+  }
+  const popLoop = setInterval(popRandom, 650);
+  const clock = setInterval(() => {
+    timeLeft--;
+    if(timeLeft <= 0){
+      running = false; timeLeft = 0;
+      holes.forEach(h => { h.dataset.active='0'; h.textContent=''; });
+      clearInterval(popLoop); clearInterval(clock);
+      updateStats();
+      if(statsEl) statsEl.innerHTML += ' — time! Reopen the game to play again';
+      saveScore('squash', score);
+      return;
+    }
+    updateStats();
+  }, 1000);
+  activeLoops.push(popLoop, clock);
+  updateStats();
+}
+
+/* ======================= GAME 7: Orbit Runner ======================= */
+function initOrbit(stage, statsEl){
+  const canvas = document.createElement('canvas');
+  canvas.width = 300; canvas.height = 320;
+  canvas.style.background = '#0a0916'; canvas.style.borderRadius = '10px';
+  stage.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  let shipX = 150, over = false, started = false, elapsed = 0, rocks = [], spawnTimer = 0;
+  const shipY = 292, shipR = 9;
+
+  function reset(){ shipX = 150; over = false; started = false; elapsed = 0; rocks = []; spawnTimer = 0; draw(); }
+
+  function spawnRock(){
+    const speed = 1.6 + Math.min(elapsed/6, 4.5); // tightens (speeds up) over time
+    rocks.push({ x: 20 + Math.random()*260, y: -14, r: 8 + Math.random()*10, speed });
+  }
+
+  function tick(dt){
+    if(!started || over) return;
+    elapsed += dt;
+    spawnTimer -= dt;
+    const spawnEvery = Math.max(0.28, 0.9 - elapsed*0.01); // spawns faster over time
+    if(spawnTimer <= 0){ spawnRock(); spawnTimer = spawnEvery; }
+    rocks.forEach(r => r.y += r.speed);
+    rocks = rocks.filter(r => r.y < canvas.height + 20);
+    for(const r of rocks){
+      const dx = r.x - shipX, dy = r.y - shipY;
+      if(Math.sqrt(dx*dx+dy*dy) < r.r + shipR){ endGame(); break; }
+    }
+  }
+  function endGame(){
+    if(over) return;
+    over = true;
+    saveScore('orbit', Math.floor(elapsed));
+  }
+  function draw(){
+    ctx.fillStyle = '#0a0916'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // starfield
+    ctx.fillStyle = '#241f42';
+    for(let i=0;i<18;i++) ctx.fillRect((i*47+13)%canvas.width, (i*83+ (elapsed*20|0))%canvas.height, 2, 2);
+    ctx.fillStyle = '#a680f2';
+    rocks.forEach(r => { ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI*2); ctx.fill(); });
+    ctx.fillStyle = over ? '#ef6f9e' : '#57e3b0';
+    ctx.beginPath(); ctx.arc(shipX, shipY, shipR, 0, Math.PI*2); ctx.fill();
+    if(statsEl) statsEl.innerHTML = `<span><b>${Math.floor(elapsed)}</b>s survived</span><span>${over ? 'Crashed — click or press R to retry' : (started ? 'Move with arrows / mouse' : 'Click or move to start')}</span>`;
+  }
+  function moveTo(x){
+    shipX = Math.max(shipR, Math.min(canvas.width - shipR, x));
+    started = true;
+  }
+  canvas.addEventListener('mousemove', (e) => {
+    if(over) return;
+    const rect = canvas.getBoundingClientRect();
+    moveTo((e.clientX - rect.left) * (canvas.width/rect.width));
+  });
+  canvas.addEventListener('click', () => { if(over) reset(); else started = true; });
+  const handler = (e) => {
+    if(!stage.isConnected) return;
+    if(over && (e.key==='r'||e.key==='R')){ reset(); return; }
+    if(e.key === 'ArrowLeft'){ moveTo(shipX - 18); e.preventDefault(); }
+    if(e.key === 'ArrowRight'){ moveTo(shipX + 18); e.preventDefault(); }
+  };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+
+  let last = performance.now();
+  const loop = setInterval(() => {
+    const now = performance.now();
+    const dt = (now - last) / 1000;
+    last = now;
+    tick(dt);
+    draw();
+  }, 30);
+  activeLoops.push(loop);
+  reset();
+}
+
+/* ======================= GAME 8: Wordy Grid ======================= */
+function initWordy(stage, statsEl){
+  const WORDS = ['PLANT','GRAPE','STORM','LIGHT','BRAVE','CANDY','TIGER','OCEAN','FABLE','QUILT','SPARK','GLIDE','CRISP','HONEY','MIRTH','PIANO','RIVER','CLOUD','FLAME','CHESS'];
+  const dayIndex = Math.floor(Date.now() / 86400000) % WORDS.length;
+  const answer = WORDS[dayIndex];
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:14px;';
+  stage.appendChild(wrap);
+
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid; grid-template-rows:repeat(6, 40px); gap:6px;';
+  wrap.appendChild(grid);
+  const rows = [];
+  for(let r=0;r<6;r++){
+    const rowEl = document.createElement('div');
+    rowEl.style.cssText = 'display:grid; grid-template-columns:repeat(5, 40px); gap:6px;';
+    const tiles = [];
+    for(let c=0;c<5;c++){
+      const t = document.createElement('div');
+      t.style.cssText = 'border:2px solid #352f57; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; background:#181530;';
+      rowEl.appendChild(t); tiles.push(t);
+    }
+    grid.appendChild(rowEl); rows.push(tiles);
+  }
+
+  const keyboardRows = ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
+  const kbWrap = document.createElement('div');
+  kbWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px; align-items:center;';
+  wrap.appendChild(kbWrap);
+  const keyEls = {};
+  keyboardRows.forEach((rowStr, i) => {
+    const rowEl = document.createElement('div');
+    rowEl.style.cssText = 'display:flex; gap:5px;';
+    if(i===2){
+      const enter = makeKey('ENTER', 46); rowEl.appendChild(enter);
+    }
+    rowStr.split('').forEach(ch => { const k = makeKey(ch, 30); keyEls[ch]=k; rowEl.appendChild(k); });
+    if(i===2){
+      const back = makeKey('⌫', 46); rowEl.appendChild(back);
+    }
+    kbWrap.appendChild(rowEl);
+  });
+  function makeKey(label, w){
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = `min-width:${w}px; height:38px; border-radius:6px; border:1px solid #352f57; background:#2a2549; color:#f3f1fb; font-size:12px; font-weight:700; padding:0 4px;`;
+    b.onclick = () => handleKey(label === 'ENTER' ? 'Enter' : (label === '⌫' ? 'Backspace' : label));
+    return b;
+  }
+
+  let curRow = 0, curGuess = '', done = false;
+  function updateStats(msg){
+    if(statsEl) statsEl.innerHTML = `<span>Guess ${Math.min(curRow+1,6)}/6</span><span>${msg||''}</span>`;
+  }
+  function handleKey(k){
+    if(done) return;
+    if(k === 'Backspace'){ curGuess = curGuess.slice(0,-1); renderRow(); return; }
+    if(k === 'Enter'){
+      if(curGuess.length !== 5){ updateStats('Need 5 letters'); return; }
+      submitGuess(); return;
+    }
+    if(/^[A-Z]$/.test(k) && curGuess.length < 5){ curGuess += k; renderRow(); }
+  }
+  function renderRow(){
+    const tiles = rows[curRow];
+    for(let i=0;i<5;i++) tiles[i].textContent = curGuess[i] || '';
+    updateStats();
+  }
+  function submitGuess(){
+    const tiles = rows[curRow];
+    const answerArr = answer.split('');
+    const guessArr = curGuess.split('');
+    const state = Array(5).fill('absent');
+    const pool = [...answerArr];
+    for(let i=0;i<5;i++) if(guessArr[i] === answerArr[i]){ state[i]='correct'; pool[pool.indexOf(guessArr[i])]=null; }
+    for(let i=0;i<5;i++) if(state[i]!=='correct'){
+      const idx = pool.indexOf(guessArr[i]);
+      if(idx>-1){ state[i]='present'; pool[idx]=null; }
+    }
+    const colors = { correct:'#57e3b0', present:'#f2c14e', absent:'#181530' };
+    state.forEach((s,i) => {
+      tiles[i].style.background = colors[s];
+      tiles[i].style.borderColor = colors[s]==='#181530' ? '#352f57' : colors[s];
+      const ch = guessArr[i];
+      if(keyEls[ch] && s !== 'absent') keyEls[ch].style.background = colors[s];
+      else if(keyEls[ch] && keyEls[ch].style.background !== '#57e3b0' && keyEls[ch].style.background !== '#f2c14e') keyEls[ch].style.background = '#221e3c';
+    });
+    if(curGuess === answer){
+      done = true;
+      updateStats('Solved! 🎉');
+      saveScore('wordy', curRow+1);
+      return;
+    }
+    curRow++;
+    curGuess = '';
+    if(curRow >= 6){
+      done = true;
+      updateStats(`Out of guesses — the word was ${answer}`);
+      return;
+    }
+    updateStats();
+  }
+  const handler = (e) => {
+    if(!stage.isConnected) return;
+    if(e.key === 'Enter' || e.key === 'Backspace' || /^[a-zA-Z]$/.test(e.key)){
+      handleKey(e.key.length===1 ? e.key.toUpperCase() : e.key);
+      e.preventDefault();
+    }
+  };
+  document.addEventListener('keydown', handler);
+  activeKeyHandler = handler;
+  updateStats();
+}
+
+const GAME_INIT = {
+  snake: (stage, stats) => initSnake(stage, stats, false),
+  match: initMatch,
+  merge: initMerge,
+  tictac: initTicTac,
+  hopper: initHopper,
+  squash: initSquash,
+  orbit: initOrbit,
+  wordy: initWordy,
+};
+
+/* ======================= hero mini snake (autoplay-ish, playable) ======================= */
+function initHero(){
+  const canvas = document.getElementById('heroCanvas');
+  const cell = 16, cols = 15, rows = 15;
+  const ctx = canvas.getContext('2d');
+  let snake=[{x:7,y:7}], dir={x:1,y:0}, nextDir=dir, food={x:10,y:7}, over=false;
+  function randCell(){ return {x: Math.floor(Math.random()*cols), y: Math.floor(Math.random()*rows)}; }
+  function draw(){
+    ctx.fillStyle='#0a0916'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#f2c14e'; ctx.fillRect(food.x*cell, food.y*cell, cell-2, cell-2);
+    snake.forEach((s,i)=>{ ctx.fillStyle = i===0?'#57e3b0':'#3fae8a'; ctx.fillRect(s.x*cell, s.y*cell, cell-2, cell-2); });
+  }
+  function tick(){
+    if(over) return;
+    dir = nextDir;
+    const head = {x: snake[0].x+dir.x, y: snake[0].y+dir.y};
+    if(head.x<0||head.y<0||head.x>=cols||head.y>=rows||snake.some(s=>s.x===head.x&&s.y===head.y)){ over=true; draw(); return; }
+    snake.unshift(head);
+    if(head.x===food.x && head.y===food.y) food = randCell(); else snake.pop();
+    draw();
+  }
+  document.addEventListener('keydown', (e)=>{
+    const map = {ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0}};
+    if(map[e.key] && document.getElementById('gameOverlay').classList.contains('hidden')){
+      const m = map[e.key];
+      if(!(m.x===-dir.x && m.y===-dir.y)) nextDir = m;
+    }
+  });
+  setInterval(tick, 160);
+  draw();
+  document.getElementById('heroPlayBtn').onclick = () => openGame('snake');
+}
+
+/* ======================= search wiring ======================= */
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  searchQuery = e.target.value.trim();
+  renderGrid();
+});
+document.getElementById('heroPlayBtn').onclick = () => openSubmitForm();
+
+/* ======================= init ======================= */
+async function restoreSession(){
+  try{
+    const username = await sGet('rumpus:session');
+    if(!username) return;
+    const record = await sGet('rumpus:user:' + username.toLowerCase());
+    if(record){
+      currentUser = record;
+      currentUser.isAdmin = !!(currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL);
+    } else {
+      await sDelete('rumpus:session'); // stale session, account no longer exists
+    }
+  }catch(e){ /* ignore — just stay logged out */ }
+}
+
+(async () => {
+  await restoreLanguage();
+  await restoreSession();
+  if(currentUser && currentUser.language && STRINGS[currentUser.language]) currentLang = currentUser.language;
+  updateStaticText();
+  renderAuthArea();
+  renderPills();
+  await loadCommunityGames();
+  renderGrid();
+})();
+
+})();
+</script>
+</body>
+</html>
