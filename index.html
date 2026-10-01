@@ -1139,7 +1139,7 @@ function renderAuthArea(){
   }
 }
 
-function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ======================= auth flows ======================= */
 const SECURITY_QUESTIONS = [
@@ -1575,11 +1575,12 @@ function closeProfile(){
   document.body.style.overflow = '';
 }
 document.addEventListener('keydown', (e) => {
-  if(e.key === 'Escape' && !document.getElementById('profileView').classList.contains('hidden')
-     && document.getElementById('gameOverlay').classList.contains('hidden')
-     && document.getElementById('authOverlay').classList.contains('hidden')){
-    closeProfile();
-  }
+  if(e.key !== 'Escape') return;
+  const isOpen = id => !document.getElementById(id).classList.contains('hidden');
+  if(isOpen('gameOverlay')) closeGameOverlay();
+  else if(isOpen('authOverlay')) document.getElementById('authOverlay').classList.add('hidden');
+  else if(isOpen('submitOverlay')) document.getElementById('submitOverlay').classList.add('hidden');
+  else if(isOpen('profileView')) closeProfile();
 });
 
 async function renderProfileView(){
@@ -1934,7 +1935,7 @@ async function renderGrid(){
   }
   if(myToken !== renderToken) return;
 
-  document.getElementById('gridTitle').textContent = viewMode !== 'home' ? VIEW_TITLES[viewMode] : (activeCategory === 'All' ? t('allGames') : t(CATEGORY_KEYS[activeCategory] || activeCategory));
+  document.getElementById('gridTitle').textContent = viewMode !== 'home' ? t(VIEW_KEYS[viewMode] || VIEW_TITLES[viewMode]) : (activeCategory === 'All' ? t('allGames') : t(CATEGORY_KEYS[activeCategory] || activeCategory));
   document.getElementById('gridCount').textContent = `${list.length} game${list.length!==1?'s':''}`;
 
   if(list.length === 0){
@@ -2217,9 +2218,9 @@ function openExternalGame(g){
     <div class="game-head">
       <div class="gh-title"><span class="icon">${g.icon}</span><h2>${escapeHtml(g.name)}</h2></div>
     </div>
-    <div class="game-stats"><span>${escapeHtml(g.desc||'')}</span><span><a href="${g.link}" target="_blank" rel="noopener" style="color:var(--mint);">Open in new tab ↗</a></span></div>
+    <div class="game-stats"><span>${escapeHtml(g.desc||'')}</span><span><a href="${escapeHtml(g.link)}" target="_blank" rel="noopener" style="color:var(--mint);">Open in new tab ↗</a></span></div>
     <div class="game-stage" id="gameStage" style="padding:0; overflow:hidden;">
-      <iframe src="${g.link}" title="${escapeHtml(g.name)}" style="width:100%; height:480px; border:none; border-radius:10px; background:#0a0916;" allow="fullscreen; autoplay; gamepad; accelerometer; gyroscope" allowfullscreen></iframe>
+      <iframe src="${escapeHtml(g.link)}" title="${escapeHtml(g.name)}" style="width:100%; height:480px; border:none; border-radius:10px; background:#0a0916;" allow="fullscreen; autoplay; gamepad; accelerometer; gyroscope" allowfullscreen></iframe>
     </div>
     <div class="game-toolbar" id="gameToolbar"></div>
     <div class="game-note">If the game doesn't load here, some sites block embedding — use "Open in new tab" instead.</div>
@@ -2360,6 +2361,7 @@ function initMatch(stage, statsEl){
         stage.querySelectorAll('button').forEach(b=>b.disabled=true);
         if(statsEl) statsEl.innerHTML += ' — solved!';
         saveScore('match', { score, moves });
+        return;
       }
     } else {
       setTimeout(()=>{
@@ -2419,7 +2421,7 @@ function initMerge(stage, statsEl){
   function rotateBoard(b){ return b[0].map((_,c)=> b.map(row=>row[c]).reverse()); }
   function move(dir){
     let b = board.map(r=>[...r]);
-    let rotations = {left:0, up:1, right:2, down:3}[dir];
+    let rotations = {left:0, up:3, right:2, down:1}[dir];
     for(let i=0;i<rotations;i++) b = rotateBoard(b);
     let moved = false;
     const newB = b.map(row => {
@@ -2457,7 +2459,7 @@ function initMerge(stage, statsEl){
 
 /* ======================= GAME 4: Tic Tac Duel ======================= */
 function initTicTac(stage, statsEl){
-  let board = Array(9).fill(null), gameOver = false;
+  let board = Array(9).fill(null), gameOver = false, cpuTimer = null;
   const wrap = document.createElement('div');
   wrap.style.cssText = 'display:grid; grid-template-columns:repeat(3,80px); grid-template-rows:repeat(3,80px); gap:8px;';
   stage.appendChild(wrap);
@@ -2478,13 +2480,16 @@ function initTicTac(stage, statsEl){
   }
   function render(){ board.forEach((v,i)=> cells[i].textContent = v || ''); }
   function playerMove(i){
-    if(gameOver || board[i]) return;
+    if(gameOver || cpuTimer || board[i]) return;
     board[i] = 'X'; render();
     const w = winner(board);
     if(w){ finish(w); return; }
-    setTimeout(cpuMove, 300);
+    updateStats('CPU is thinking…');
+    cpuTimer = setTimeout(cpuMove, 300);
   }
   function cpuMove(){
+    cpuTimer = null;
+    if(gameOver) return;
     const empties = board.map((v,i)=>v?null:i).filter(v=>v!==null);
     if(empties.length===0) return;
     // slightly smart: win if possible, block if needed, else random
@@ -2508,7 +2513,7 @@ function initTicTac(stage, statsEl){
     updateStats(w==='draw' ? "It's a draw — press R to play again" : (w==='X' ? 'You win! Press R to play again' : 'CPU wins — press R to try again'));
     saveScore('tictac', result);
   }
-  function reset(){ board = Array(9).fill(null); gameOver=false; render(); updateStats(); }
+  function reset(){ clearTimeout(cpuTimer); cpuTimer = null; board = Array(9).fill(null); gameOver=false; render(); updateStats(); }
   const handler = (e) => { if((e.key==='r'||e.key==='R') && stage.isConnected) reset(); };
   document.addEventListener('keydown', handler);
   activeKeyHandler = handler;
@@ -2746,6 +2751,7 @@ function initWordy(stage, statsEl){
   }
 
   let curRow = 0, curGuess = '', done = false;
+  const keyState = {};
   function updateStats(msg){
     if(statsEl) statsEl.innerHTML = `<span>Guess ${Math.min(curRow+1,6)}/6</span><span>${msg||''}</span>`;
   }
@@ -2775,12 +2781,18 @@ function initWordy(stage, statsEl){
       if(idx>-1){ state[i]='present'; pool[idx]=null; }
     }
     const colors = { correct:'#57e3b0', present:'#f2c14e', absent:'#181530' };
+    const keyColors = { correct:'#57e3b0', present:'#f2c14e', absent:'#221e3c' };
+    const rank = { absent:0, present:1, correct:2 };
     state.forEach((s,i) => {
       tiles[i].style.background = colors[s];
-      tiles[i].style.borderColor = colors[s]==='#181530' ? '#352f57' : colors[s];
+      tiles[i].style.borderColor = s === 'absent' ? '#352f57' : colors[s];
       const ch = guessArr[i];
-      if(keyEls[ch] && s !== 'absent') keyEls[ch].style.background = colors[s];
-      else if(keyEls[ch] && keyEls[ch].style.background !== '#57e3b0' && keyEls[ch].style.background !== '#f2c14e') keyEls[ch].style.background = '#221e3c';
+      if(!keyEls[ch]) return;
+      const prev = keyState[ch];
+      if(prev === undefined || rank[s] > rank[prev]){
+        keyState[ch] = s;
+        keyEls[ch].style.background = keyColors[s];
+      }
     });
     if(curGuess === answer){
       done = true;
@@ -2798,7 +2810,7 @@ function initWordy(stage, statsEl){
     updateStats();
   }
   const handler = (e) => {
-    if(!stage.isConnected) return;
+    if(!stage.isConnected || e.ctrlKey || e.metaKey || e.altKey) return;
     if(e.key === 'Enter' || e.key === 'Backspace' || /^[a-zA-Z]$/.test(e.key)){
       handleKey(e.key.length===1 ? e.key.toUpperCase() : e.key);
       e.preventDefault();
