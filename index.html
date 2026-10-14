@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Rumpus Games</title>
+<title>Rumpus — browser games, no downloads</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400..800&family=Wix+Madefor+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -58,6 +58,7 @@
   .wordmark{ font-size: 26px; color: var(--text); white-space:nowrap; display:flex; align-items:baseline; gap:8px;}
   .wordmark span{ color: var(--yellow); }
   .tagline{ font-size: 12px; color: var(--text-dim); font-family: inherit; font-weight:400; margin-left:2px; }
+  @media (max-width: 480px){ .tagline{ display:none; } }
 
   .search-wrap{ flex: 1 1 260px; min-width: 180px; position: relative; }
   .search-wrap input{
@@ -93,14 +94,8 @@
   }
 
   /* ---------- category pills ---------- */
-  .pillbar{
-    display:flex; gap:8px; overflow-x:auto; padding: 18px 0 10px;
-    scrollbar-width: thin; scrollbar-color: var(--text-dim) var(--surface);
-  }
-  .pillbar::-webkit-scrollbar{ height: 8px; }
-  .pillbar::-webkit-scrollbar-track{ background: var(--surface); border-radius: 999px; }
-  .pillbar::-webkit-scrollbar-thumb{ background: var(--text-dim); border-radius: 999px; }
-  .pillbar::-webkit-scrollbar-thumb:hover{ background: var(--text); }
+  .pillbar{ display:flex; gap:8px; overflow-x:auto; padding: 18px 0 6px; }
+  .pillbar::-webkit-scrollbar{ display:none; }
   .pill{
     flex: 0 0 auto; padding: 7px 15px; border-radius: 999px; font-size: 13px; font-weight:600;
     background: var(--surface); border: 1px solid var(--line); color: var(--text-dim);
@@ -112,9 +107,10 @@
   .hero{
     margin-top: 22px; border-radius: 22px; border: 1px solid var(--line);
     background: linear-gradient(120deg, #241f42, #1a1730 70%);
-    padding: 26px; display:grid; grid-template-columns: 1.1fr 1fr; gap: 28px; align-items:center;
+    padding: 26px; display:grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); gap: 28px; align-items:center;
   }
-  @media (max-width: 760px){ .hero{ grid-template-columns: 1fr; } }
+  @media (max-width: 760px){ .hero{ grid-template-columns: minmax(0,1fr); } }
+  .hero-copy, .hero-stage{ min-width:0; }
   .hero-copy .eyebrow{ color: var(--mint); font-size: 13px; font-weight:700; margin:0 0 8px; }
   .hero-copy h1{ font-size: 34px; line-height:1.15; margin: 0 0 10px; }
   .hero-copy p{ color: var(--text-dim); font-size: 15px; line-height:1.55; max-width: 46ch; margin: 0 0 18px;}
@@ -173,18 +169,6 @@
     width: 100%; max-width: 420px; padding: 26px; position:relative;
   }
   .modal.game-modal{ max-width: 640px; }
-  .overlay.admin-full{ padding:0; align-items:stretch; }
-  .overlay.admin-full .modal{
-    max-width: none; width:100%; min-height:100%; border-radius:0; border:none;
-    padding: 32px clamp(20px, 6vw, 80px) 60px; overflow-y:auto;
-  }
-  .overlay.admin-full .modal .close{ top:22px; right:26px; font-size:28px; }
-  .overlay.admin-full .modal h2{ font-size: 32px; }
-  .overlay.admin-full .modal .sub{ font-size: 15px; }
-  .admin-section h3{ font-size:15px; margin:14px 0 6px; }
-  .overlay.admin-full .admin-section h3{ font-size: 20px; margin: 28px 0 10px; }
-  .overlay.admin-full .admin-list{ max-height: none; margin-bottom: 6px; }
-  .admin-list{ max-height:220px; overflow-y:auto; margin-bottom:10px; }
   .modal .close{
     position:absolute; top:14px; right:14px; background: none; border:none; color: var(--text-dim);
     font-size: 20px; line-height:1; padding:4px;
@@ -263,29 +247,28 @@
     position: fixed; top:0; left:0; height:100vh; width:64px;
     background: var(--bg-raise); border-right: 1px solid var(--line);
     overflow-x: hidden; overflow-y: auto; transition: width .18s ease;
-    z-index: 60; display:flex; flex-direction:column; padding: 4px 0;
-    scrollbar-width: none;
+    z-index: 60; display:flex; flex-direction:column; padding: 5px 0;
+    scrollbar-width: none; justify-content: space-between;
   }
   .sidebar::-webkit-scrollbar{ display:none; }
-  .sidebar:hover{ width: 250px; box-shadow: 8px 0 24px rgba(0,0,0,0.35); }
+  .sidebar:hover{ width: 210px; box-shadow: 8px 0 24px rgba(0,0,0,0.35); }
   .side-logo{
-    display:flex; align-items:center; gap:12px; padding: 4px 18px 6px; white-space:nowrap; flex-shrink:0;
+    display:flex; align-items:center; gap:10px; padding: 3px 18px 5px; white-space:nowrap;
   }
-  .side-logo .dot{ width:22px; height:22px; border-radius:7px; background: var(--yellow); flex-shrink:0; }
-  .side-logo .label{ font-family:'Wix Madefor Display',sans-serif; font-weight:800; font-size:18px; opacity:0; transition: opacity .12s ease; }
+  .side-logo .dot{ width:18px; height:18px; border-radius:6px; background: var(--yellow); flex-shrink:0; }
+  .side-logo .label{ font-family:'Wix Madefor Display',sans-serif; font-weight:800; font-size:16px; opacity:0; transition: opacity .12s ease; }
   .sidebar:hover .side-logo .label{ opacity:1; }
   .side-item{
-    display:flex; align-items:center; gap:12px; padding: 0 18px; white-space:nowrap;
-    color: var(--text-dim); font-size: 16px; font-weight:700; border: none; background:none;
-    width:100%; text-align:left; font-family:inherit;
-    flex-shrink:0; min-height: 44px;
+    display:flex; align-items:center; gap:10px; padding: 3px 18px; white-space:nowrap;
+    color: var(--text-dim); font-size: 15px; font-weight:600; border: none; background:none;
+    width:100%; text-align:left; font-family:inherit; flex-shrink:0;
   }
   .side-item:hover{ color: var(--text); background: var(--surface); }
   .side-item.active{ color: var(--text); background: var(--surface-hi); border-left:3px solid var(--yellow); padding-left:15px; }
-  .side-item .icon{ font-size: 18px; width:24px; text-align:center; flex-shrink:0; line-height:1; }
+  .side-item .icon{ font-size:16px; width:20px; text-align:center; flex-shrink:0; }
   .side-item .label{ opacity:0; transition: opacity .12s ease; }
   .sidebar:hover .side-item .label{ opacity:1; }
-  .side-divider{ border:none; border-top:1px solid var(--line); margin: 2px 16px; flex-shrink:0; }
+  .side-divider{ border:none; border-top:1px solid var(--line); margin: 3px 16px; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -344,7 +327,7 @@
       <button class="btn primary" id="heroPlayBtn">Submit a game</button>
     </div>
     <div class="hero-stage">
-      <div style="width:240px; height:240px; border-radius:10px; background:#0a0916; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--text-dim); font-size:13px; text-align:center; padding:20px;">
+      <div style="width:100%; max-width:240px; aspect-ratio:1/1; border-radius:10px; background:#0a0916; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--text-dim); font-size:13px; text-align:center; padding:20px;">
         <span style="font-size:34px;">🎮</span>
         <span id="heroEmptyText">No games yet — be the first to add one.</span>
       </div>
@@ -405,7 +388,7 @@ const ADMIN_EMAIL = 'elijahdragonknight@gmail.com';
 // every major platform for "all languages". Each name is shown as it's written by native
 // speakers (its endonym). Only a few of these (marked by having real entries in STRINGS)
 // have translated interface text right now — the rest fall back to English until added.
-const LANGUAGES = [
+const RAW_LANGUAGES = [
   { code:'aa', label:'Afaraf', en:'Afar' }, { code:'ab', label:'Аҧсуа', en:'Abkhaz' }, { code:'af', label:'Afrikaans', en:'Afrikaans' },
   { code:'ak', label:'Akan', en:'Akan' }, { code:'sq', label:'Shqip', en:'Albanian' }, { code:'am', label:'አማርኛ', en:'Amharic' },
   { code:'ar', label:'العربية', en:'Arabic' }, { code:'an', label:'Aragonés', en:'Aragonese' }, { code:'hy', label:'Հայերեն', en:'Armenian' },
@@ -1037,6 +1020,9 @@ const STRINGS = {
     catMultiplayer:'Veelspeler', catCommunity:'Gemeenskap', catAll:'Alle'
   },
 };
+// Only keep languages that actually have real translations above — no point listing
+// entries that would just silently fall back to English.
+const LANGUAGES = RAW_LANGUAGES.filter(l => !!STRINGS[l.code]);
 const CATEGORY_KEYS = {
   'All':'catAll','Action':'catAction','Adventure':'catAdventure','Arcade':'catArcade','Board':'catBoard','Card':'catCard',
   'Clicker':'catClicker','Driving':'catDriving','.io':'catIo','Puzzle':'catPuzzle','Shooting':'catShooting',
@@ -1048,6 +1034,7 @@ let currentLang = 'en';
 function t(key){ return (STRINGS[currentLang] && STRINGS[currentLang][key]) || STRINGS.en[key] || key; }
 
 function updateStaticText(){
+  document.documentElement.lang = currentLang;
   const tag = document.getElementById('taglineText'); if(tag) tag.textContent = t('tagline');
   const search = document.getElementById('searchInput'); if(search) search.placeholder = t('searchPlaceholder');
   const submitBtn = document.getElementById('submitGameBtn'); if(submitBtn) submitBtn.textContent = t('submitGame');
@@ -1091,9 +1078,19 @@ function sGet(key){
   try{ const v = localStorage.getItem(key); return Promise.resolve(v ? JSON.parse(v) : null); }
   catch(e){ return Promise.resolve(null); }
 }
+let storageWarned = false;
+function notifyStorageProblem(){
+  if(storageWarned) return;
+  storageWarned = true;
+  const b = document.createElement('div');
+  b.textContent = "Couldn't save — your browser storage is full or disabled, so recent changes may be lost.";
+  b.style.cssText = 'position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:300; background:var(--pink); color:#1a0d14; font-size:13px; font-weight:700; padding:10px 16px; border-radius:12px; max-width:90vw; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,.4);';
+  document.body.appendChild(b);
+  setTimeout(() => { b.remove(); storageWarned = false; }, 7000);
+}
 function sSet(key, val){
   try{ localStorage.setItem(key, JSON.stringify(val)); return Promise.resolve({key, value:val}); }
-  catch(e){ console.error('storage set failed', e); return Promise.resolve(null); }
+  catch(e){ console.error('storage set failed', e); notifyStorageProblem(); return Promise.resolve(null); }
 }
 function sList(prefix){
   try{
@@ -1158,7 +1155,7 @@ function renderAuthArea(){
   }
 }
 
-function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ======================= auth flows ======================= */
 const SECURITY_QUESTIONS = [
@@ -1169,9 +1166,7 @@ const SECURITY_QUESTIONS = [
 ];
 
 function openAuth(mode){
-  const overlay = document.getElementById('authOverlay');
-  overlay.classList.remove('hidden');
-  overlay.classList.remove('admin-full');
+  document.getElementById('authOverlay').classList.remove('hidden');
   renderAuthForm(mode);
 }
 
@@ -1215,7 +1210,9 @@ function renderAuthForm(mode){
   `;
   document.getElementById('authSwitch').onclick = () => renderAuthForm(isLogin ? 'signup' : 'login');
   document.getElementById('authSubmit').onclick = () => handleAuthSubmit(mode);
-  document.getElementById('authPass').addEventListener('keydown', e => { if(e.key==='Enter') handleAuthSubmit(mode); });
+  document.querySelectorAll('#authModalBody input').forEach(inp => {
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') handleAuthSubmit(mode); });
+  });
   if(isSignup){
     document.getElementById('authPass').addEventListener('input', (e) => {
       const s = passwordStrengthLabel(e.target.value);
@@ -1299,12 +1296,12 @@ async function handleAuthSubmit(mode){
     if(pass.length < 6){ msg.textContent = 'Password needs at least 6 characters.'; return; }
     if(pass !== passConfirm){ msg.textContent = 'Passwords don\'t match.'; return; }
     if(!secA){ msg.textContent = 'Please answer your security question (used for password resets).'; return; }
-    if(existing){ msg.textContent = 'That username is taken. Try logging in instead.'; return; }
+    if(existing || username.toLowerCase() === 'guest'){ msg.textContent = 'That username is taken. Try logging in instead.'; return; }
     const record = {
       username, password: pass, email: email.toLowerCase(), joined: Date.now(), scores: {},
       securityQuestion: secQ, securityAnswer: secA.toLowerCase()
     };
-    await sSet(key, record);
+    if(!(await sSet(key, record))){ msg.textContent = "Couldn't save your account — browser storage looks full or disabled."; return; }
     currentUser = record;
   } else {
     if(!existing){ msg.textContent = 'No account with that username yet. Sign up first.'; return; }
@@ -1320,39 +1317,29 @@ async function handleAuthSubmit(mode){
 async function logout(){ currentUser = null; await sDelete('rumpus:session'); renderAuthArea(); renderGrid(); }
 
 async function openAdminPanel(){
-  const overlay = document.getElementById('authOverlay');
-  overlay.classList.remove('hidden');
-  overlay.classList.add('admin-full');
+  document.getElementById('authOverlay').classList.remove('hidden');
   const body = document.getElementById('authModalBody');
   body.innerHTML = `
     <h2>Admin</h2>
     <p class="sub">Review submitted games, and manage accounts.</p>
-    <div class="admin-section">
-      <h3>Pending submissions</h3>
-      <div id="adminSubs" class="admin-list"><p class="sub">Loading submissions…</p></div>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Pending submissions</h3>
+    <div id="adminSubs" style="max-height:220px; overflow-y:auto; margin-bottom:10px;"><p class="sub">Loading submissions…</p></div>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Published games</h3>
+    <div id="adminGames" style="max-height:220px; overflow-y:auto; margin-bottom:10px;"><p class="sub">Loading games…</p></div>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Accounts</h3>
+    <div id="adminList" style="max-height:220px; overflow-y:auto;"><p class="sub">Loading accounts…</p></div>
+    <h3 style="font-size:15px; margin:14px 0 6px;">Data backup</h3>
+    <p class="sub" style="margin-bottom:10px;">Everything (accounts, scores, submissions) already survives site updates on its own. This backup is only in case someone clears their browser or switches devices.</p>
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button class="btn ghost" style="flex:1; font-size:13px;" id="exportBtn">⬇ Export backup</button>
+      <label class="btn ghost" style="flex:1; font-size:13px; text-align:center; cursor:pointer;">
+        ⬆ Import backup
+        <input type="file" id="importInput" accept="application/json" style="display:none;">
+      </label>
     </div>
-    <div class="admin-section">
-      <h3>Published games</h3>
-      <div id="adminGames" class="admin-list"><p class="sub">Loading games…</p></div>
-    </div>
-    <div class="admin-section">
-      <h3>Accounts</h3>
-      <div id="adminList" class="admin-list"><p class="sub">Loading accounts…</p></div>
-    </div>
-    <div class="admin-section">
-      <h3>Data backup</h3>
-      <p class="sub" style="margin-bottom:10px;">Everything (accounts, scores, submissions) already survives site updates on its own. This backup is only in case someone clears their browser or switches devices.</p>
-      <div style="display:flex; gap:8px; margin-bottom:16px;">
-        <button class="btn ghost" style="flex:1; font-size:13px;" id="exportBtn">⬇ Export backup</button>
-        <label class="btn ghost" style="flex:1; font-size:13px; text-align:center; cursor:pointer;">
-          ⬆ Import backup
-          <input type="file" id="importInput" accept="application/json" style="display:none;">
-        </label>
-      </div>
-    </div>
-    <button class="btn ghost" style="width:100%; max-width:320px;" id="closeAdmin">Close</button>
+    <button class="btn ghost" style="width:100%;" id="closeAdmin">Close</button>
   `;
-  document.getElementById('closeAdmin').onclick = () => overlay.classList.add('hidden');
+  document.getElementById('closeAdmin').onclick = () => document.getElementById('authOverlay').classList.add('hidden');
   document.getElementById('exportBtn').onclick = exportAllData;
   document.getElementById('importInput').onchange = (e) => {
     const file = e.target.files && e.target.files[0];
@@ -1585,6 +1572,29 @@ function resizeImageToDataUrl(file, size){
   });
 }
 
+function scaleImageToDataUrl(file, maxSide){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * ratio)), h = Math.max(1, Math.round(img.height * ratio));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#0e0c1a'; ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function thumbHtml(g){
   if(g.thumbnail){
     return g.thumbnail.startsWith('data:video')
@@ -1607,11 +1617,12 @@ function closeProfile(){
 }
 document.addEventListener('keydown', (e) => {
   if(e.key !== 'Escape') return;
-  const isOpen = id => !document.getElementById(id).classList.contains('hidden');
-  if(isOpen('gameOverlay')) closeGameOverlay();
-  else if(isOpen('authOverlay')) document.getElementById('authOverlay').classList.add('hidden');
-  else if(isOpen('submitOverlay')) document.getElementById('submitOverlay').classList.add('hidden');
-  else if(isOpen('profileView')) closeProfile();
+  if(!document.getElementById('gameOverlay').classList.contains('hidden')){
+    closeGameOverlay();
+  } else if(!document.getElementById('profileView').classList.contains('hidden')
+     && document.getElementById('authOverlay').classList.contains('hidden')){
+    closeProfile();
+  }
 });
 
 async function renderProfileView(){
@@ -1757,7 +1768,7 @@ function renderProfileSettings(content){
 
       <div class="pv-section">
         <h3>${t('language')}</h3>
-        <p class="pv-dim" style="margin-bottom:10px;">Only a few of these have translated interface text so far (marked ✓) — the rest currently show English text until translated.</p>
+        <p class="pv-dim" style="margin-bottom:10px;">${LANGUAGES.length} languages with fully translated interface text.</p>
         <input id="langSearch" type="text" placeholder="Search languages..." style="width:100%; max-width:320px; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:13px; font-family:inherit; margin-bottom:8px;" />
         <div id="langList" style="max-width:320px; max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:10px;"></div>
       </div>
@@ -1836,10 +1847,9 @@ function renderProfileSettings(content){
       return;
     }
     listEl.innerHTML = matches.map(l => {
-      const hasTranslation = !!(STRINGS[l.code]);
       const isCurrent = l.code === currentLang;
       return `<button class="side-item lang-option" data-lang="${l.code}" style="width:100%; padding:9px 14px; opacity:1; color:${isCurrent ? 'var(--text)' : 'var(--text-dim)'}; background:${isCurrent ? 'var(--surface-hi)' : 'none'}; border-bottom:1px solid var(--line);">
-        <span class="label" style="opacity:1;">${escapeHtml(l.label)}${hasTranslation ? ' <span style="color:var(--mint);">✓</span>' : ''}</span>
+        <span class="label" style="opacity:1;">${escapeHtml(l.label)}</span>
       </button>`;
     }).join('');
     listEl.querySelectorAll('.lang-option').forEach(btn => {
@@ -1966,7 +1976,7 @@ async function renderGrid(){
   }
   if(myToken !== renderToken) return;
 
-  document.getElementById('gridTitle').textContent = viewMode !== 'home' ? t(VIEW_KEYS[viewMode] || VIEW_TITLES[viewMode]) : (activeCategory === 'All' ? t('allGames') : t(CATEGORY_KEYS[activeCategory] || activeCategory));
+  document.getElementById('gridTitle').textContent = viewMode !== 'home' ? VIEW_TITLES[viewMode] : (activeCategory === 'All' ? t('allGames') : t(CATEGORY_KEYS[activeCategory] || activeCategory));
   document.getElementById('gridCount').textContent = `${list.length} game${list.length!==1?'s':''}`;
 
   if(list.length === 0){
@@ -2114,11 +2124,18 @@ async function handleSubmitGame(){
 
   const file = fileInput.files && fileInput.files[0];
   if(file){
-    if(file.size > 3000000){ msg.textContent = 'That file is a bit large — please use something under ~3MB (smaller for images).'; btn.disabled=false; btn.textContent='Send for review'; return; }
-    const reader = new FileReader();
-    reader.onload = () => finish(reader.result);
-    reader.onerror = () => finish(null);
-    reader.readAsDataURL(file);
+    const isStill = file.type.startsWith('image/') && file.type !== 'image/gif';
+    const reset = (m) => { msg.textContent = m; btn.disabled=false; btn.textContent='Send for review'; };
+    if(isStill){
+      if(file.size > 10 * 1024 * 1024){ reset('That image is too large — please use one under 10MB.'); return; }
+      scaleImageToDataUrl(file, 640).then(finish).catch(() => reset("Couldn't read that image — try a different file."));
+    } else {
+      if(file.size > 1024 * 1024){ reset('Animated GIFs and videos need to be under 1MB — try a shorter clip or a still image.'); return; }
+      const reader = new FileReader();
+      reader.onload = () => finish(reader.result);
+      reader.onerror = () => reset("Couldn't read that file — try a different one.");
+      reader.readAsDataURL(file);
+    }
   } else {
     finish(null);
   }
@@ -2213,15 +2230,25 @@ function recordAccountPlay(gameId){
   persistUser();
 }
 let playSession = null;
+let hiddenAt = null;
 function startPlaySession(gameId){
   endPlaySession();
-  playSession = { id: gameId, start: Date.now() };
+  playSession = { id: gameId, start: Date.now(), hiddenMs: 0 };
+  hiddenAt = document.hidden ? Date.now() : null;
 }
+// Time spent with the tab in the background doesn't count toward minutes played.
+document.addEventListener('visibilitychange', () => {
+  if(!playSession) return;
+  if(document.hidden){ hiddenAt = Date.now(); }
+  else if(hiddenAt){ playSession.hiddenMs += Date.now() - hiddenAt; hiddenAt = null; }
+});
 function endPlaySession(){
   if(!playSession) return;
   const id = playSession.id;
-  const secs = Math.min(Math.round((Date.now() - playSession.start) / 1000), 2 * 60 * 60);
+  const hiddenMs = playSession.hiddenMs + (hiddenAt ? Date.now() - hiddenAt : 0);
+  const secs = Math.min(Math.round((Date.now() - playSession.start - hiddenMs) / 1000), 2 * 60 * 60);
   playSession = null;
+  hiddenAt = null;
   if(!currentUser || secs < 1) return;
   currentUser.activity = currentUser.activity || {};
   currentUser.activity.plays = currentUser.activity.plays || {};
@@ -2269,12 +2296,12 @@ function openGame(id){
   const body = document.getElementById('gameModalBody');
   body.innerHTML = `
     <div class="game-head">
-      <div class="gh-title"><span class="icon">${g.icon}</span><h2>${g.name}</h2></div>
+      <div class="gh-title"><span class="icon">${g.icon}</span><h2>${escapeHtml(g.name)}</h2></div>
     </div>
     <div class="game-stats" id="gameStats"></div>
     <div class="game-stage" id="gameStage"></div>
     <div class="game-toolbar" id="gameToolbar"></div>
-    <div class="game-note" id="gameNote">${g.desc}</div>
+    <div class="game-note" id="gameNote">${escapeHtml(g.desc)}</div>
   `;
   GAME_INIT[id](document.getElementById('gameStage'), document.getElementById('gameStats'));
   renderGameToolbar(document.getElementById('gameToolbar'), id, document.getElementById('gameStage'));
@@ -2392,7 +2419,6 @@ function initMatch(stage, statsEl){
         stage.querySelectorAll('button').forEach(b=>b.disabled=true);
         if(statsEl) statsEl.innerHTML += ' — solved!';
         saveScore('match', { score, moves });
-        return;
       }
     } else {
       setTimeout(()=>{
@@ -2452,7 +2478,7 @@ function initMerge(stage, statsEl){
   function rotateBoard(b){ return b[0].map((_,c)=> b.map(row=>row[c]).reverse()); }
   function move(dir){
     let b = board.map(r=>[...r]);
-    let rotations = {left:0, up:3, right:2, down:1}[dir];
+    let rotations = {left:0, up:1, right:2, down:3}[dir];
     for(let i=0;i<rotations;i++) b = rotateBoard(b);
     let moved = false;
     const newB = b.map(row => {
@@ -2490,7 +2516,7 @@ function initMerge(stage, statsEl){
 
 /* ======================= GAME 4: Tic Tac Duel ======================= */
 function initTicTac(stage, statsEl){
-  let board = Array(9).fill(null), gameOver = false, cpuTimer = null;
+  let board = Array(9).fill(null), gameOver = false;
   const wrap = document.createElement('div');
   wrap.style.cssText = 'display:grid; grid-template-columns:repeat(3,80px); grid-template-rows:repeat(3,80px); gap:8px;';
   stage.appendChild(wrap);
@@ -2511,16 +2537,13 @@ function initTicTac(stage, statsEl){
   }
   function render(){ board.forEach((v,i)=> cells[i].textContent = v || ''); }
   function playerMove(i){
-    if(gameOver || cpuTimer || board[i]) return;
+    if(gameOver || board[i]) return;
     board[i] = 'X'; render();
     const w = winner(board);
     if(w){ finish(w); return; }
-    updateStats('CPU is thinking…');
-    cpuTimer = setTimeout(cpuMove, 300);
+    setTimeout(cpuMove, 300);
   }
   function cpuMove(){
-    cpuTimer = null;
-    if(gameOver) return;
     const empties = board.map((v,i)=>v?null:i).filter(v=>v!==null);
     if(empties.length===0) return;
     // slightly smart: win if possible, block if needed, else random
@@ -2544,7 +2567,7 @@ function initTicTac(stage, statsEl){
     updateStats(w==='draw' ? "It's a draw — press R to play again" : (w==='X' ? 'You win! Press R to play again' : 'CPU wins — press R to try again'));
     saveScore('tictac', result);
   }
-  function reset(){ clearTimeout(cpuTimer); cpuTimer = null; board = Array(9).fill(null); gameOver=false; render(); updateStats(); }
+  function reset(){ board = Array(9).fill(null); gameOver=false; render(); updateStats(); }
   const handler = (e) => { if((e.key==='r'||e.key==='R') && stage.isConnected) reset(); };
   document.addEventListener('keydown', handler);
   activeKeyHandler = handler;
@@ -2782,7 +2805,6 @@ function initWordy(stage, statsEl){
   }
 
   let curRow = 0, curGuess = '', done = false;
-  const keyState = {};
   function updateStats(msg){
     if(statsEl) statsEl.innerHTML = `<span>Guess ${Math.min(curRow+1,6)}/6</span><span>${msg||''}</span>`;
   }
@@ -2812,18 +2834,12 @@ function initWordy(stage, statsEl){
       if(idx>-1){ state[i]='present'; pool[idx]=null; }
     }
     const colors = { correct:'#57e3b0', present:'#f2c14e', absent:'#181530' };
-    const keyColors = { correct:'#57e3b0', present:'#f2c14e', absent:'#221e3c' };
-    const rank = { absent:0, present:1, correct:2 };
     state.forEach((s,i) => {
       tiles[i].style.background = colors[s];
-      tiles[i].style.borderColor = s === 'absent' ? '#352f57' : colors[s];
+      tiles[i].style.borderColor = colors[s]==='#181530' ? '#352f57' : colors[s];
       const ch = guessArr[i];
-      if(!keyEls[ch]) return;
-      const prev = keyState[ch];
-      if(prev === undefined || rank[s] > rank[prev]){
-        keyState[ch] = s;
-        keyEls[ch].style.background = keyColors[s];
-      }
+      if(keyEls[ch] && s !== 'absent') keyEls[ch].style.background = colors[s];
+      else if(keyEls[ch] && keyEls[ch].style.background !== '#57e3b0' && keyEls[ch].style.background !== '#f2c14e') keyEls[ch].style.background = '#221e3c';
     });
     if(curGuess === answer){
       done = true;
@@ -2841,7 +2857,7 @@ function initWordy(stage, statsEl){
     updateStats();
   }
   const handler = (e) => {
-    if(!stage.isConnected || e.ctrlKey || e.metaKey || e.altKey) return;
+    if(!stage.isConnected) return;
     if(e.key === 'Enter' || e.key === 'Backspace' || /^[a-zA-Z]$/.test(e.key)){
       handleKey(e.key.length===1 ? e.key.toUpperCase() : e.key);
       e.preventDefault();
