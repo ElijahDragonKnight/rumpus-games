@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Rumpus — browser games, no downloads</title>
 <link rel="icon" type="image/png" href="favicon.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400..800&family=Wix+Madefor+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://googleapis.com">
+<link rel="preconnect" href="https://gstatic.com" crossorigin>
+<link href="https://googleapis.com/css2?family=Wix+Madefor+Display:wght@400..800&family=Wix+Madefor+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg: #14121f;
@@ -178,4 +178,35 @@
   .modal h2{ margin: 0 0 4px; font-size: 22px; }
   .modal .sub{ color: var(--text-dim); font-size: 13px; margin: 0 0 18px; }
   .field{ margin-bottom: 14px; }
-  .field label{ display:block; font-size: 12px
+  .field label{ display:block; font-size: 12px; }
+</style>
+</head>
+<body>
+
+  <!-- Layout structure container -->
+  <div class="shell">
+    <!-- Website header -->
+    <header class="top">
+      <div class="top-inner">
+        <div class="wordmark">Rumpus<span>.</span><span class="tagline">browser games</span></div>
+      </div>
+    </header>
+
+    <!-- Main content area -->
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Instant Action</p>
+          <h1>Play directly in your browser.</h1>
+          <p>No waiting, no system configuration stress, no downloads. Just pick a game and jump right into the fun instantly.</p>
+        </div>
+        <div class="hero-stage">
+          <canvas id="heroCanvas" width="200" height="150"></canvas>
+          <div class="hs-label">Live Preview Arcade</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+</body>
+</html>
